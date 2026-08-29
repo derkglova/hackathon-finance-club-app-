@@ -56,8 +56,9 @@
             <sc-for list="{{ budgetSummaries }}" as="b" hint-placeholder-count="2">
               <div style="flex-shrink:0; width:200px; background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:14px 16px; box-shadow:0 1px 2px rgba(16,24,32,0.04);">
                 <div style="font-weight:700; font-size:14px; margin-bottom:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ b.name }}</div>
-                <div style="height:6px; background:#F1F2F4; border-radius:3px; overflow:hidden; margin-bottom:6px;">
-                  <div style="height:100%; width:{{ b.barWidth }}%; background:{{ b.barColor }}; border-radius:3px;"></div>
+                <div style="display:flex; height:6px; background:#F1F2F4; border-radius:3px; overflow:hidden; margin-bottom:6px;">
+                  <div style="height:100%; width:{{ b.barWidth }}%; background:{{ b.barColor }};"></div>
+                  <div style="height:100%; width:{{ b.committedWidth }}%; background:{{ b.committedBg }};"></div>
                 </div>
                 <div style="font-size:12px; color:#9CA3AF;">{{ b.spentLabel }} / {{ b.allocatedLabel }} spent</div>
               </div>
@@ -110,6 +111,16 @@
             </sc-if>
           </div>
           <div style="flex:1.3; min-width:280px; display:flex; flex-direction:column; gap:16px;">
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Document type</label>
+              <div style="display:flex; background:#F3F4F6; border-radius:8px; padding:3px;">
+                <button onClick="{{ onSetKindReceipt }}" style="{{ draftKindReceiptStyle }}">Receipt — already paid</button>
+                <button onClick="{{ onSetKindQuote }}" style="{{ draftKindQuoteStyle }}">Quote — not yet paid</button>
+              </div>
+              <sc-if value="{{ draftIsQuote }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12px; color:#6B7280; margin-top:6px;">This will be tracked as committed spend until the real receipt arrives.</div>
+              </sc-if>
+            </div>
             <div>
               <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Your name</label>
               <input value="{{ draftMemberName }}" onChange="{{ onMemberNameChange }}" placeholder="e.g. John" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px;" />
@@ -307,8 +318,9 @@
           <sc-for list="{{ budgetSummaries }}" as="b" hint-placeholder-count="3">
             <div onClick="{{ b.onManage }}" onMouseEnter="{{ b.onHoverEnter }}" onMouseLeave="{{ b.onHoverLeave }}" style="background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:16px 18px; box-shadow:0 1px 2px rgba(16,24,32,0.04); cursor:pointer; transition:transform 0.15s ease, box-shadow 0.15s ease;" style-hover="transform:translateY(-1px); box-shadow:0 4px 10px rgba(16,24,32,0.08);">
               <div style="font-weight:700; font-size:15px; margin-bottom:10px;">{{ b.name }}</div>
-              <div style="height:6px; background:#F1F2F4; border-radius:3px; overflow:hidden;">
-                <div style="height:100%; width:{{ b.barWidth }}%; background:{{ b.barColor }}; border-radius:3px;"></div>
+              <div style="display:flex; height:6px; background:#F1F2F4; border-radius:3px; overflow:hidden;">
+                <div style="height:100%; width:{{ b.barWidth }}%; background:{{ b.barColor }};"></div>
+                <div style="height:100%; width:{{ b.committedWidth }}%; background:{{ b.committedBg }};"></div>
               </div>
               <div style="margin-top:8px; font-size:13px; color:#9CA3AF;">{{ b.spentLabel }} / {{ b.allocatedLabel }} · <span style="font-weight:700; color:{{ b.barColor }};">{{ b.pctLabel }}%</span></div>
               <sc-if value="{{ b.isHovered }}" hint-placeholder-val="{{ false }}">
@@ -319,8 +331,9 @@
                         <span style="font-weight:700; color:#4B5563;">{{ sub.name }}</span>
                         <span style="color:#9CA3AF;">{{ sub.spentLabel }} / {{ sub.allocatedLabel }} · {{ sub.pctLabel }}%</span>
                       </div>
-                      <div style="height:5px; background:#F1F2F4; border-radius:3px; overflow:hidden;">
-                        <div style="height:100%; width:{{ sub.barWidth }}%; background:{{ sub.barColor }}; border-radius:3px;"></div>
+                      <div style="display:flex; height:5px; background:#F1F2F4; border-radius:3px; overflow:hidden;">
+                        <div style="height:100%; width:{{ sub.barWidth }}%; background:{{ sub.barColor }};"></div>
+                        <div style="height:100%; width:{{ sub.committedWidth }}%; background:{{ sub.committedBg }};"></div>
                       </div>
                     </div>
                   </sc-for>
@@ -347,10 +360,21 @@
               <button onClick="{{ onDeleteActiveEvent }}" style="padding:6px 12px; border-radius:6px; border:1px solid #E4B4AE; background:#FDEEEC; color:#B0362B; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#FBDFDA;">Delete</button>
             </div>
           </div>
-          <div style="height:8px; background:#F1F2F4; border-radius:4px; overflow:hidden;">
-            <div style="height:100%; width:{{ activeEventBarWidth }}%; background:{{ activeEventBarColor }}; border-radius:4px;"></div>
+          <div style="display:flex; height:8px; background:#F1F2F4; border-radius:4px; overflow:hidden;">
+            <div style="height:100%; width:{{ activeEventBarWidth }}%; background:{{ activeEventBarColor }};"></div>
+            <div style="height:100%; width:{{ activeEventCommittedWidth }}%; background:{{ activeEventCommittedBg }};"></div>
           </div>
-          <div style="font-size:13px; color:#6B7280; margin-top:8px;">{{ activeEventSpentLabel }} / {{ activeEventAllocatedLabel }} spent</div>
+          <sc-if value="{{ activeEventHasCommitted }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:10px; font-size:13px;">
+              <span style="display:flex; align-items:center; gap:6px; color:#6B7280;"><span style="width:10px; height:10px; border-radius:2px; background:{{ activeEventBarColor }};"></span>{{ activeEventSpentLabel }} spent</span>
+              <span style="display:flex; align-items:center; gap:6px; color:#6B7280;"><span style="width:10px; height:10px; border-radius:2px; background:{{ activeEventCommittedBg }};"></span>{{ activeEventCommittedLabel }} committed</span>
+              <span style="display:flex; align-items:center; gap:6px; color:#6B7280;"><span style="width:10px; height:10px; border-radius:2px; background:#F1F2F4;"></span>{{ activeEventAvailableLabel }} available</span>
+              <span style="color:#9CA3AF;">of {{ activeEventAllocatedLabel }}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ activeEventNoCommitted }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13px; color:#6B7280; margin-top:8px;">{{ activeEventSpentLabel }} / {{ activeEventAllocatedLabel }} spent</div>
+          </sc-if>
 
           <sc-if value="{{ hasOwedList }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:16px;">
@@ -366,6 +390,7 @@
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
               <div style="display:flex; background:#F3F4F6; border-radius:8px; padding:3px;">
                 <button onClick="{{ onSetFilterAll }}" style="{{ filterAllStyle }}">All</button>
+                <button onClick="{{ onSetFilterQuotes }}" style="{{ filterQuotesStyle }}">Quotes</button>
                 <button onClick="{{ onSetFilterPaid }}" style="{{ filterPaidStyle }}">Paid</button>
                 <button onClick="{{ onSetFilterUnpaid }}" style="{{ filterUnpaidStyle }}">Unpaid</button>
               </div>
@@ -384,13 +409,21 @@
                       <img src="{{ req.previewUrl }}" onClick="{{ req.onOpenLightbox }}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #E4E5E8; cursor:pointer; flex-shrink:0;" />
                     </sc-if>
                     <div>
-                      <div style="font-weight:700; font-size:14px;">{{ req.merchant }}</div>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="font-weight:700; font-size:14px;">{{ req.merchant }}</div>
+                        <sc-if value="{{ req.isQuote }}" hint-placeholder-val="{{ false }}">
+                          <span style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:#FDF6E3; color:#92710D;">Quote</span>
+                        </sc-if>
+                      </div>
                       <div style="font-size:12px; color:#9CA3AF; margin-top:2px;">{{ req.metaLine }}</div>
                     </div>
                   </div>
                   <div style="display:flex; align-items:center; gap:10px;">
                     <div style="font-weight:800; font-size:15px;">{{ req.amountLabel }}</div>
                     <div style="font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; background:{{ req.statusBg }}; color:{{ req.statusColor }};">{{ req.statusLabel }}</div>
+                    <sc-if value="{{ req.showConvert }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ req.onOpenConvert }}" style="padding:4px 10px; border-radius:20px; border:1px solid #C9CDD3; background:#fff; color:#374151; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Convert to receipt</button>
+                    </sc-if>
                     <sc-if value="{{ req.showPaidToggle }}" hint-placeholder-val="{{ false }}">
                       <button onClick="{{ req.onTogglePaid }}" style="padding:4px 10px; border-radius:20px; border:1px solid {{ req.paidBorder }}; background:{{ req.paidBg }}; color:{{ req.paidColor }}; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;">{{ req.paidLabel }}</button>
                     </sc-if>
@@ -511,6 +544,31 @@
     </div>
   </sc-if>
 
+  <sc-if value="{{ convertModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;">
+      <div style="background:#fff; border-radius:16px; padding:24px; max-width:380px; width:100%; display:flex; flex-direction:column; gap:14px; box-shadow:0 8px 24px rgba(16,24,32,0.15);">
+        <div>
+          <div style="font-size:17px; font-weight:800;">Convert to receipt</div>
+          <div style="font-size:13px; color:#6B7280; margin-top:4px;">{{ convertMerchant }} — quoted at {{ convertQuotedLabel }}. Enter the amount actually charged.</div>
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Final amount</label>
+          <div style="position:relative;">
+            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:14px;">$</span>
+            <input type="number" step="0.01" min="0" value="{{ convertAmount }}" onChange="{{ onConvertAmountChange }}" style="width:100%; padding:10px 12px 10px 24px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
+          </div>
+        </div>
+        <sc-if value="{{ hasConvertError }}" hint-placeholder-val="{{ false }}">
+          <div style="color:#B0362B; font-size:13px; font-weight:700;">{{ convertError }}</div>
+        </sc-if>
+        <div style="display:flex; gap:10px; margin-top:8px;">
+          <button onClick="{{ onCloseConvert }}" style="flex:1; padding:11px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Cancel</button>
+          <button onClick="{{ onConfirmConvert }}" style="flex:1; padding:11px; border-radius:8px; border:none; background:#1F7A4D; color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#175E3B;">Convert</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ hasLightbox }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ onCloseLightbox }}" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:60; padding:20px; cursor:zoom-out;">
       <img src="{{ lightboxUrl }}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px;" />
@@ -560,32 +618,48 @@ const STATUS_META = {
 };
 
 function formatCurrency(n) { return '$' + Number(n || 0).toFixed(2); }
-function barStats(spent, allocated) {
-  const pct = allocated > 0 ? (spent / allocated) * 100 : 0;
-  const barColor = pct >= 90 ? '#B0362B' : pct >= 70 ? '#B45309' : '#1F7A4D';
-  return { pct, pctLabel: Math.round(pct), barWidth: Math.min(100, Math.round(pct)), barColor };
+const COMMITTED_HATCH = 'repeating-linear-gradient(135deg, #E7B96B 0px, #E7B96B 4px, #F5DCAE 4px, #F5DCAE 8px)';
+function isQuote(r) { return r.kind === 'quote'; }
+function sumApproved(requests, matches) {
+  return requests.filter(r => r.status === 'approved').filter(matches).reduce((sum, r) => sum + r.amount, 0);
+}
+function barStats(spent, committed, allocated) {
+  const spentPct = allocated > 0 ? (spent / allocated) * 100 : 0;
+  const committedPct = allocated > 0 ? (committed / allocated) * 100 : 0;
+  const totalPct = spentPct + committedPct;
+  const barColor = totalPct >= 90 ? '#B0362B' : totalPct >= 70 ? '#B45309' : '#1F7A4D';
+  const spentWidth = Math.min(100, Math.round(spentPct));
+  return {
+    pct: totalPct, pctLabel: Math.round(totalPct),
+    barWidth: spentWidth,
+    committedWidth: Math.max(0, Math.min(100 - spentWidth, Math.round(committedPct))),
+    hasCommitted: committed > 0,
+    barColor, committedBg: COMMITTED_HATCH,
+  };
 }
 function overBudgetWarning(budgets, requests, budgetId, subsectionId, amount, excludeRequestId) {
   const budget = budgets.find(b => b.id === budgetId);
   if (!budget || !(amount > 0)) return '';
-  const approvedSpent = (matches) => requests.filter(matches).filter(r => r.id !== excludeRequestId).reduce((sum, r) => sum + r.amount, 0);
+  const others = requests.filter(r => r.id !== excludeRequestId);
+  const check = (scope, name, allocated) => {
+    if (!(allocated > 0)) return '';
+    const spent = sumApproved(others, r => scope(r) && !isQuote(r));
+    const committed = sumApproved(others, r => scope(r) && isQuote(r));
+    const projected = spent + committed + amount;
+    if (projected <= allocated) return '';
+    const pct = Math.round((projected / allocated) * 100);
+    const base = `This would put ${name} at ${pct}% (${formatCurrency(projected)} / ${formatCurrency(allocated)})`;
+    return committed > 0 ? `${base} — ${formatCurrency(committed)} of that is already committed` : base;
+  };
 
   if (subsectionId) {
     const sub = (budget.subsections || []).find(x => x.id === subsectionId);
-    if (sub && sub.allocated > 0) {
-      const projected = approvedSpent(r => r.budgetId === budgetId && r.subsectionId === subsectionId && r.status === 'approved') + amount;
-      if (projected > sub.allocated) {
-        return `This would put ${sub.name} at ${Math.round((projected / sub.allocated) * 100)}% (${formatCurrency(projected)} / ${formatCurrency(sub.allocated)})`;
-      }
+    if (sub) {
+      const msg = check(r => r.budgetId === budgetId && r.subsectionId === subsectionId, sub.name, sub.allocated);
+      if (msg) return msg;
     }
   }
-  if (budget.allocated > 0) {
-    const projected = approvedSpent(r => r.budgetId === budgetId && r.status === 'approved') + amount;
-    if (projected > budget.allocated) {
-      return `This would put ${budget.name} at ${Math.round((projected / budget.allocated) * 100)}% (${formatCurrency(projected)} / ${formatCurrency(budget.allocated)})`;
-    }
-  }
-  return '';
+  return check(r => r.budgetId === budgetId, budget.name, budget.allocated);
 }
 function parseEventIdFromHash(hash) {
   const m = /^#\/events\/(.+)$/.exec(hash || '');
@@ -643,6 +717,9 @@ class Component extends DCLogic {
       deleteEventConfirmOpen: false,
       deleteRequestId: null,
       requestFilter: 'all',
+      convertRequestId: null,
+      convertAmount: '',
+      convertError: null,
       budgets: [],
       requests: [],
     };
@@ -757,9 +834,42 @@ class Component extends DCLogic {
     }
   };
 
+  onOpenConvert = (id) => {
+    const req = this.state.requests.find(r => r.id === id);
+    this.setState({ convertRequestId: id, convertAmount: req ? String(req.amount) : '', convertError: null });
+  };
+  onCloseConvert = () => this.setState({ convertRequestId: null, convertAmount: '', convertError: null });
+  onConvertAmountChange = (e) => this.setState({ convertAmount: e.target.value });
+  onConfirmConvert = async () => {
+    const id = this.state.convertRequestId;
+    if (!id) return;
+    const amount = parseFloat(this.state.convertAmount) || 0;
+    if (amount <= 0) {
+      this.setState({ convertError: 'Enter an amount above $0.' });
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/requests/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'receipt', amount }),
+      });
+      if (!res.ok) throw new Error('request failed');
+      const updated = await res.json();
+      this.setState(s => ({
+        requests: s.requests.map(r => r.id === id ? updated : r),
+        convertRequestId: null, convertAmount: '', convertError: null,
+        toast: 'Quote converted to an actual expense',
+      }));
+      setTimeout(() => this.setState({ toast: null }), 2500);
+    } catch (err) {
+      this.setState({ convertError: "Couldn't convert — check that the server is running." });
+    }
+  };
+
   onSetRequestFilter = (filter) => this.setState({ requestFilter: filter });
   onDownloadPaidReceipts = () => {
-    const targets = this.state.requests.filter(r => r.budgetId === this.state.activeEventId && r.status === 'approved' && r.paid && r.fileType === 'image' && r.previewUrl);
+    const targets = this.state.requests.filter(r => r.budgetId === this.state.activeEventId && r.status === 'approved' && !isQuote(r) && r.paid && r.fileType === 'image' && r.previewUrl);
     if (targets.length === 0) {
       this.setState({ toast: 'No paid receipts to download yet.' });
       setTimeout(() => this.setState({ toast: null }), 2500);
@@ -862,6 +972,7 @@ class Component extends DCLogic {
           amount: typeof data.amount === 'number' ? data.amount : (parseFloat(data.amount) || ''),
           date: data.date || '',
           category: CATEGORIES.includes(data.category) ? data.category : 'Other',
+          kind: data.documentType === 'quote' ? 'quote' : 'receipt',
           budgetId: '', subsectionId: '', memberName: this.state.rememberedMemberName, note: '', fileName, fileType, previewUrl,
           lineItems: Array.isArray(data.lineItems) ? data.lineItems.filter(li => li && li.description) : [],
         },
@@ -870,7 +981,7 @@ class Component extends DCLogic {
       this.setState({
         uploadStatus: 'idle',
         screen: 'review',
-        draft: { merchant: '', amount: '', date: '', category: CATEGORIES[0], budgetId: '', subsectionId: '', memberName: this.state.rememberedMemberName, note: '', fileName, fileType, previewUrl, lineItems: [] },
+        draft: { merchant: '', amount: '', date: '', category: CATEGORIES[0], kind: 'receipt', budgetId: '', subsectionId: '', memberName: this.state.rememberedMemberName, note: '', fileName, fileType, previewUrl, lineItems: [] },
         toast: "Couldn't auto-read that receipt — please fill in the details.",
       });
       setTimeout(() => this.setState({ toast: null }), 3000);
@@ -921,6 +1032,7 @@ class Component extends DCLogic {
     this.updateDraft('memberName', value);
     try { localStorage.setItem('ledger_member_name', value); } catch (err) {}
   };
+  onSetDraftKind = (kind) => this.updateDraft('kind', kind);
   onMerchantChange = (e) => this.updateDraft('merchant', e.target.value);
   onAmountChange = (e) => this.updateDraft('amount', e.target.value);
   onDateChange = (e) => this.updateDraft('date', e.target.value);
@@ -939,7 +1051,7 @@ class Component extends DCLogic {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          memberId: 'me', memberName: d.memberName.trim(), merchant: d.merchant, amount: parseFloat(d.amount) || 0,
+          memberId: 'me', memberName: d.memberName.trim(), kind: d.kind || 'receipt', merchant: d.merchant, amount: parseFloat(d.amount) || 0,
           date: d.date, category: d.category, budgetId: d.budgetId || '', subsectionId: d.subsectionId || '', note: d.note,
           previewUrl: d.previewUrl, fileType: d.fileType,
         }),
@@ -1064,14 +1176,17 @@ class Component extends DCLogic {
 
     const budgetSelectOptions = [{ id: '', name: 'No budget' }, ...s.budgets];
     const budgetSummaries = s.budgets.map(b => {
-      const linked = s.requests.filter(r => r.budgetId === b.id && r.status === 'approved');
-      const spent = linked.reduce((sum, r) => sum + r.amount, 0);
-      const stats = barStats(spent, b.allocated);
+      const inBudget = (r) => r.budgetId === b.id;
+      const linked = s.requests.filter(r => inBudget(r) && r.status === 'approved');
+      const spent = sumApproved(s.requests, r => inBudget(r) && !isQuote(r));
+      const committed = sumApproved(s.requests, r => inBudget(r) && isQuote(r));
+      const stats = barStats(spent, committed, b.allocated);
       const subCount = (b.subsections || []).length;
       const hoverSubsections = (b.subsections || []).map(sub => {
-        const subLinked = s.requests.filter(r => r.subsectionId === sub.id && r.status === 'approved');
-        const subSpent = subLinked.reduce((sum, r) => sum + r.amount, 0);
-        const subStats = barStats(subSpent, sub.allocated);
+        const inSub = (r) => r.subsectionId === sub.id;
+        const subSpent = sumApproved(s.requests, r => inSub(r) && !isQuote(r));
+        const subCommitted = sumApproved(s.requests, r => inSub(r) && isQuote(r));
+        const subStats = barStats(subSpent, subCommitted, sub.allocated);
         return { ...sub, spentLabel: formatCurrency(subSpent), allocatedLabel: formatCurrency(sub.allocated), ...subStats };
       });
       return {
@@ -1092,34 +1207,47 @@ class Component extends DCLogic {
 
     const activeEvent = s.budgets.find(b => b.id === s.activeEventId);
     const subsectionRows = activeEvent ? (activeEvent.subsections || []).map(sub => {
-      const linked = s.requests.filter(r => r.subsectionId === sub.id && r.status === 'approved');
-      const spent = linked.reduce((sum, r) => sum + r.amount, 0);
+      const inSub = (r) => r.subsectionId === sub.id;
+      const linked = s.requests.filter(r => inSub(r) && r.status === 'approved');
+      const spent = sumApproved(s.requests, r => inSub(r) && !isQuote(r));
+      const committed = sumApproved(s.requests, r => inSub(r) && isQuote(r));
       return {
         ...sub, count: linked.length,
         spentLabel: formatCurrency(spent), allocatedLabel: formatCurrency(sub.allocated),
+        hasCommitted: committed > 0, committedLabel: formatCurrency(committed),
         onEdit: () => this.onEditSubsection(sub.id),
         onDelete: () => this.onDeleteSubsection(sub.id),
       };
     }) : [];
+    const inActiveEvent = (r) => activeEvent && r.budgetId === activeEvent.id;
+    const activeEventSpent = activeEvent ? sumApproved(s.requests, r => inActiveEvent(r) && !isQuote(r)) : 0;
+    const activeEventCommitted = activeEvent ? sumApproved(s.requests, r => inActiveEvent(r) && isQuote(r)) : 0;
     const activeEventStats = activeEvent
-      ? barStats(s.requests.filter(r => r.budgetId === activeEvent.id && r.status === 'approved').reduce((sum, r) => sum + r.amount, 0), activeEvent.allocated)
-      : { pctLabel: 0, barWidth: 0, barColor: '#1F7A4D' };
-    const activeEventSpent = activeEvent ? s.requests.filter(r => r.budgetId === activeEvent.id && r.status === 'approved').reduce((sum, r) => sum + r.amount, 0) : 0;
+      ? barStats(activeEventSpent, activeEventCommitted, activeEvent.allocated)
+      : { pctLabel: 0, barWidth: 0, committedWidth: 0, hasCommitted: false, barColor: '#1F7A4D', committedBg: COMMITTED_HATCH };
+    const activeEventAvailable = activeEvent ? activeEvent.allocated - activeEventSpent - activeEventCommitted : 0;
     const activeEventRequests = activeEvent ? s.requests.filter(r => r.budgetId === activeEvent.id)
-      .filter(r => s.requestFilter === 'all' ? true : s.requestFilter === 'paid' ? (r.status === 'approved' && r.paid) : (r.status === 'approved' && !r.paid))
+      .filter(r => s.requestFilter === 'all' ? true
+        : s.requestFilter === 'quotes' ? isQuote(r)
+        : s.requestFilter === 'paid' ? (r.status === 'approved' && !isQuote(r) && r.paid)
+        : (r.status === 'approved' && !isQuote(r) && !r.paid))
       .sort((a, b) => b.id - a.id).map(r => {
       const subLabel = getSubsectionName(s.budgets, r.budgetId, r.subsectionId);
       const name = r.memberName || 'Unknown';
+      const quote = isQuote(r);
       return {
         ...r, dateLabel: formatDateLabel(r.date), amountLabel: formatCurrency(r.amount), memberName: name,
         statusLabel: STATUS_META[r.status].label, statusColor: STATUS_META[r.status].color, statusBg: STATUS_META[r.status].bg,
         metaLine: name + ' · ' + formatDateLabel(r.date) + (subLabel ? ' · ' + subLabel : ''),
         hasReceipt: r.fileType === 'image' && !!r.previewUrl,
         onOpenLightbox: () => this.onOpenLightbox(r.previewUrl),
-        showPaidToggle: r.status === 'approved',
+        isQuote: quote,
+        showPaidToggle: r.status === 'approved' && !quote,
+        showConvert: r.status === 'approved' && quote,
         paidLabel: r.paid ? 'Paid ✓' : 'Mark as paid',
         paidBg: r.paid ? '#EAF7EF' : '#fff', paidColor: r.paid ? '#1F7A4D' : '#4B5563', paidBorder: r.paid ? '#BFE3CC' : '#E4E5E8',
         onTogglePaid: () => this.onTogglePaid(r.id, !r.paid),
+        onOpenConvert: () => this.onOpenConvert(r.id),
         onOpenDelete: () => this.onOpenDeleteRequestConfirm(r.id),
       };
     }) : [];
@@ -1131,18 +1259,21 @@ class Component extends DCLogic {
       : 'flex:1; padding:6px 14px; border-radius:6px; border:none; background:transparent; color:#6B7280; font-weight:700; font-size:12px; cursor:pointer;';
     const activeEventEmptyMessage = s.requestFilter === 'paid' ? 'No paid requests yet.'
       : s.requestFilter === 'unpaid' ? 'Nothing owed right now.'
+      : s.requestFilter === 'quotes' ? 'No quotes for this event yet.'
       : 'No requests tagged to this event yet.';
 
     const owedMap = {};
     if (activeEvent) {
       s.requests.forEach(r => {
-        if (r.budgetId === activeEvent.id && r.status === 'approved' && !r.paid) {
+        if (r.budgetId === activeEvent.id && r.status === 'approved' && !isQuote(r) && !r.paid) {
           const name = r.memberName || 'Unknown';
           owedMap[name] = (owedMap[name] || 0) + r.amount;
         }
       });
     }
     const owedList = Object.keys(owedMap).sort().map(name => ({ name, amountLabel: formatCurrency(owedMap[name]) }));
+
+    const convertTarget = s.requests.find(r => r.id === s.convertRequestId);
 
     return {
       isMember, isTreasurer,
@@ -1169,6 +1300,10 @@ class Component extends DCLogic {
       cameraOpen: s.cameraOpen, hasCameraError: !!s.cameraError, cameraError: s.cameraError || '', videoRef: this.videoRef,
 
       draftMemberName: draft ? (draft.memberName || '') : '', onMemberNameChange: this.onMemberNameChange,
+      draftIsQuote: !!draft && draft.kind === 'quote',
+      draftKindReceiptStyle: filterPillStyle(!!draft && draft.kind !== 'quote'),
+      draftKindQuoteStyle: filterPillStyle(!!draft && draft.kind === 'quote'),
+      onSetKindReceipt: () => this.onSetDraftKind('receipt'), onSetKindQuote: () => this.onSetDraftKind('quote'),
       draftMerchant: draft ? draft.merchant : '', draftAmount: draft ? draft.amount : '',
       draftDate: draft ? draft.date : '', draftCategory: draft ? draft.category : '',
       draftNote: draft ? draft.note : '', draftFileName: draft ? draft.fileName : '',
@@ -1206,6 +1341,8 @@ class Component extends DCLogic {
       activeEventFound: !!activeEvent, activeEventNotFound: s.budgetsLoaded && !activeEvent, activeEventName: activeEvent ? activeEvent.name : '',
       activeEventSpentLabel: formatCurrency(activeEventSpent), activeEventAllocatedLabel: activeEvent ? formatCurrency(activeEvent.allocated) : '',
       activeEventPctLabel: activeEventStats.pctLabel, activeEventBarWidth: activeEventStats.barWidth, activeEventBarColor: activeEventStats.barColor,
+      activeEventCommittedWidth: activeEventStats.committedWidth, activeEventHasCommitted: activeEventStats.hasCommitted, activeEventNoCommitted: !activeEventStats.hasCommitted, activeEventCommittedBg: activeEventStats.committedBg,
+      activeEventCommittedLabel: formatCurrency(activeEventCommitted), activeEventAvailableLabel: formatCurrency(activeEventAvailable),
       onBackToEvents: this.onBackToEvents,
       onEditActiveEvent: this.onEditActiveEvent, onDeleteActiveEvent: this.onDeleteActiveEvent,
       deleteEventConfirmOpen: s.deleteEventConfirmOpen,
@@ -1217,8 +1354,16 @@ class Component extends DCLogic {
       onCloseDeleteRequestConfirm: this.onCloseDeleteRequestConfirm, onConfirmDeleteRequest: this.onConfirmDeleteRequest,
       activeEventRequests, activeEventRequestsEmpty: activeEventRequests.length === 0, activeEventEmptyMessage,
       filterAllStyle: filterPillStyle(s.requestFilter === 'all'), filterPaidStyle: filterPillStyle(s.requestFilter === 'paid'), filterUnpaidStyle: filterPillStyle(s.requestFilter === 'unpaid'),
+      filterQuotesStyle: filterPillStyle(s.requestFilter === 'quotes'),
       onSetFilterAll: () => this.onSetRequestFilter('all'), onSetFilterPaid: () => this.onSetRequestFilter('paid'), onSetFilterUnpaid: () => this.onSetRequestFilter('unpaid'),
+      onSetFilterQuotes: () => this.onSetRequestFilter('quotes'),
       onDownloadPaidReceipts: this.onDownloadPaidReceipts,
+
+      convertModalOpen: !!s.convertRequestId,
+      convertMerchant: convertTarget ? convertTarget.merchant : '', convertQuotedLabel: convertTarget ? formatCurrency(convertTarget.amount) : '',
+      convertAmount: s.convertAmount, onConvertAmountChange: this.onConvertAmountChange,
+      hasConvertError: !!s.convertError, convertError: s.convertError || '',
+      onCloseConvert: this.onCloseConvert, onConfirmConvert: this.onConfirmConvert,
       owedList, hasOwedList: owedList.length > 0,
 
       subsectionRows, hasSubsectionRows: subsectionRows.length > 0, hasNoSubsectionRows: subsectionRows.length === 0,

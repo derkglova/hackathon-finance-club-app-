@@ -7,6 +7,7 @@ bp = Blueprint("api", __name__, url_prefix="/api")
 
 CATEGORIES = {"Food & Drinks", "Supplies", "Printing", "Travel", "Equipment", "Other"}
 STATUSES = {"pending", "approved", "rejected"}
+KINDS = {"receipt", "quote"}
 
 
 # ---- Budgets ----
@@ -174,11 +175,14 @@ def create_request():
     budget_id = data.get("budgetId") or ""
     subsection_id = data.get("subsectionId") or ""
     member_name = (data.get("memberName") or "").strip()
+    kind = data.get("kind") or "receipt"
 
     if not merchant:
         return jsonify(error="merchant is required"), 400
     if not member_name:
         return jsonify(error="memberName is required"), 400
+    if kind not in KINDS:
+        return jsonify(error=f"kind must be one of {sorted(KINDS)}"), 400
     try:
         amount = float(amount)
     except (TypeError, ValueError):
@@ -203,6 +207,7 @@ def create_request():
         "category": category,
         "budgetId": budget_id,
         "subsectionId": subsection_id,
+        "kind": kind,
         "note": data.get("note") or "",
         "status": "pending",
         "comment": "",
@@ -233,6 +238,19 @@ def update_request(request_id):
         if not isinstance(paid, bool):
             return jsonify(error="paid must be a boolean"), 400
         req["paid"] = paid
+    if "kind" in data:
+        kind = data.get("kind")
+        if kind not in KINDS:
+            return jsonify(error=f"kind must be one of {sorted(KINDS)}"), 400
+        req["kind"] = kind
+    if "amount" in data:
+        try:
+            amount = float(data.get("amount"))
+        except (TypeError, ValueError):
+            return jsonify(error="amount must be a number"), 400
+        if amount <= 0:
+            return jsonify(error="amount must be greater than 0"), 400
+        req["amount"] = amount
 
     return jsonify(req)
 

@@ -7,12 +7,16 @@ GEMINI_MODEL = "gemini-3.6-flash"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 CATEGORIES = {"Food & Drinks", "Supplies", "Printing", "Travel", "Equipment", "Other"}
+DOCUMENT_TYPES = {"receipt", "quote"}
 
 PROMPT = (
     'Extract details from this receipt or quote. Respond with ONLY minified JSON, no markdown, '
     'matching exactly this shape: {"merchant":string,"amount":number,"date":"YYYY-MM-DD",'
     '"category":"Food & Drinks"|"Supplies"|"Printing"|"Travel"|"Equipment"|"Other",'
-    '"lineItems":[{"description":string,"cost":number}]}. Pick the category that best fits. '
+    '"documentType":"receipt"|"quote","lineItems":[{"description":string,"cost":number}]}. '
+    'Pick the category that best fits. For documentType, use "quote" if this is a quotation, '
+    'estimate, proforma or proposal for money not yet paid; use "receipt" if it is a receipt, '
+    'tax invoice, bill or any proof of a completed payment. '
     'If a field is illegible or missing, use "" / 0 / [].'
 )
 
@@ -75,10 +79,15 @@ def parse_receipt(media_type, data_b64):
     if not isinstance(line_items, list):
         line_items = []
 
+    document_type = data.get("documentType")
+    if document_type not in DOCUMENT_TYPES:
+        document_type = "receipt"
+
     return {
         "merchant": data.get("merchant") or "",
         "amount": amount,
         "date": data.get("date") or "",
         "category": category,
+        "documentType": document_type,
         "lineItems": line_items,
     }
