@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from flask import Flask
 from flask_cors import CORS
 
@@ -8,4 +12,4 @@ CORS(app)
 app.register_blueprint(bp)
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001, use_reloader=False)

@@ -344,7 +344,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 const MEMBERS = [{ id: 'me', name: 'You' }];
-const API_BASE = 'http://127.0.0.1:5000/api';
+const API_BASE = 'http://127.0.0.1:5001/api';
 
 const CATEGORIES = ['Food & Drinks', 'Supplies', 'Printing', 'Travel', 'Equipment', 'Other'];
 
@@ -450,17 +450,13 @@ class Component extends DCLogic {
     this.setState({ uploadStatus: 'processing', processingFileName: fileName, uploadError: null });
     try {
       const base64 = await fileToBase64(file);
-      const contentBlock = fileType === 'image'
-        ? { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } }
-        : { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } };
-      const prompt = 'Extract details from this receipt or quote. Respond with ONLY minified JSON, no markdown, matching exactly this shape: {"merchant":string,"amount":number,"date":"YYYY-MM-DD","category":"Food & Drinks"|"Supplies"|"Printing"|"Travel"|"Equipment"|"Other","lineItems":[{"description":string,"cost":number}]}. Pick the category that best fits. If a field is illegible or missing, use "" / 0 / [].';
-      const raw = await window.claude.complete({
-        model: 'claude-haiku-4-5',
-        max_tokens: 800,
-        messages: [{ role: 'user', content: [contentBlock, { type: 'text', text: prompt }] }],
+      const res = await fetch(`${API_BASE}/receipts/parse`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ media_type: file.type, data: base64 }),
       });
-      const jsonStr = raw.trim().replace(/^```(json)?/i, '').replace(/```$/, '').trim();
-      const data = JSON.parse(jsonStr);
+      if (!res.ok) throw new Error('request failed');
+      const data = await res.json();
       this.setState({
         uploadStatus: 'idle',
         screen: 'review',

@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 
 import storage
+from ocr import OcrError, parse_receipt
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -118,6 +119,17 @@ def update_request(request_id):
 # ---- Receipt OCR ----
 
 @bp.post("/receipts/parse")
-def parse_receipt():
-    # Placeholder until this is wired to a real OCR/LLM provider (e.g. Anthropic API with a base64 image/PDF).
-    return jsonify(error="receipt parsing is not implemented yet"), 501
+def parse_receipt_route():
+    data = request.get_json(silent=True) or {}
+    media_type = data.get("media_type")
+    b64 = data.get("data")
+
+    if not media_type or not b64:
+        return jsonify(error="media_type and data are required"), 400
+
+    try:
+        result = parse_receipt(media_type, b64)
+    except OcrError as e:
+        return jsonify(error=str(e)), 502
+
+    return jsonify(result)
