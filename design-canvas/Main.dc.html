@@ -111,10 +111,6 @@
           </div>
           <div style="flex:1.3; min-width:280px; display:flex; flex-direction:column; gap:16px;">
             <div>
-              <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Your name</label>
-              <input value="{{ draftMemberName }}" onChange="{{ onMemberNameChange }}" placeholder="e.g. John" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px;" />
-            </div>
-            <div>
               <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Merchant</label>
               <input value="{{ draftMerchant }}" onChange="{{ onMerchantChange }}" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px;" />
             </div>
@@ -184,7 +180,7 @@
               <div style="font-size:12px; color:#9CA3AF;">No budget allocated yet — ask your treasurer to create one before submitting.</div>
             </sc-if>
             <sc-if value="{{ needsBudgetPick }}" hint-placeholder-val="{{ false }}">
-              <div style="font-size:12px; color:#9CA3AF;">Enter your name and select a budget/event above before submitting.</div>
+              <div style="font-size:12px; color:#9CA3AF;">Select a budget/event above before submitting.</div>
             </sc-if>
           </div>
         </div>
@@ -267,12 +263,7 @@
                   <div style="font-size:14px; color:#4B5563; margin-bottom:14px;">"{{ selected.note }}"</div>
                 </sc-if>
                 <sc-if value="{{ selected.previewIsImage }}" hint-placeholder-val="{{ false }}">
-                  <div style="position:relative; margin-bottom:14px;">
-                    <img ref="{{ selectedImgRef }}" style="width:100%; max-height:220px; object-fit:contain; border:1px solid #E4E5E8; border-radius:10px; background:#fff; display:block;" />
-                    <button onClick="{{ selected.onOpenLightbox }}" style="position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:6px; border:none; background:rgba(17,19,24,0.6); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s ease;" style-hover="background:rgba(17,19,24,0.8);">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
-                    </button>
-                  </div>
+                  <img ref="{{ selectedImgRef }}" style="width:100%; max-height:220px; object-fit:contain; border:1px solid #E4E5E8; border-radius:10px; margin-bottom:14px; background:#fff;" />
                 </sc-if>
                 <sc-if value="{{ selected.previewIsPlaceholder }}" hint-placeholder-val="{{ false }}">
                   <div style="border:1px solid #E4E5E8; border-radius:10px; background:repeating-linear-gradient(135deg, #F6F6F7 0px, #F6F6F7 10px, #FFFFFF 10px, #FFFFFF 20px); height:120px; display:flex; align-items:center; justify-content:center; margin-bottom:14px;">
@@ -306,11 +297,21 @@
         <div style="display:flex; flex-direction:column; gap:12px;">
           <sc-for list="{{ budgetSummaries }}" as="b" hint-placeholder-count="3">
             <div onClick="{{ b.onManage }}" onMouseEnter="{{ b.onHoverEnter }}" onMouseLeave="{{ b.onHoverLeave }}" style="background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:16px 18px; box-shadow:0 1px 2px rgba(16,24,32,0.04); cursor:pointer; transition:transform 0.15s ease, box-shadow 0.15s ease;" style-hover="transform:translateY(-1px); box-shadow:0 4px 10px rgba(16,24,32,0.08);">
-              <div style="font-weight:700; font-size:15px; margin-bottom:10px;">{{ b.name }}</div>
-              <div style="height:6px; background:#F1F2F4; border-radius:3px; overflow:hidden;">
-                <div style="height:100%; width:{{ b.barWidth }}%; background:{{ b.barColor }}; border-radius:3px;"></div>
+              <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
+                <div style="font-weight:700; font-size:15px;">{{ b.name }}</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div style="font-size:12px; color:#9CA3AF;">{{ b.count }} requests tagged</div>
+                  <button onClick="{{ b.onEdit }}" style="padding:4px 10px; border-radius:6px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Edit</button>
+                </div>
               </div>
-              <div style="margin-top:8px; font-size:13px; color:#9CA3AF;">{{ b.spentLabel }} / {{ b.allocatedLabel }} · <span style="font-weight:700; color:{{ b.barColor }};">{{ b.pctLabel }}%</span></div>
+              <div style="height:8px; background:#F1F2F4; border-radius:4px; overflow:hidden;">
+                <div style="height:100%; width:{{ b.barWidth }}%; background:{{ b.barColor }}; border-radius:4px;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:13px;">
+                <span style="color:#6B7280;">{{ b.spentLabel }} / {{ b.allocatedLabel }} spent</span>
+                <span style="font-weight:700; color:{{ b.barColor }};">{{ b.pctLabel }}%</span>
+              </div>
+              <div style="margin-top:8px; font-size:12px; color:#9CA3AF;">{{ b.subsectionsHint }}</div>
               <sc-if value="{{ b.isHovered }}" hint-placeholder-val="{{ false }}">
                 <div style="margin-top:12px; padding-top:12px; border-top:1px solid #F1F2F4; display:flex; flex-direction:column; gap:10px; animation:fadeIn 0.15s ease;">
                   <sc-for list="{{ b.hoverSubsections }}" as="sub" hint-placeholder-count="3">
@@ -337,66 +338,30 @@
         <button onClick="{{ onBackToEvents }}" style="background:none; border:none; padding:0; margin-bottom:18px; color:#6B7280; font-weight:700; font-size:13px; cursor:pointer;" style-hover="color:#374151;">← Back to Events</button>
 
         <sc-if value="{{ activeEventFound }}" hint-placeholder-val="{{ true }}">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:12px; flex-wrap:wrap;">
-            <div style="display:flex; align-items:baseline; gap:12px;">
-              <div style="font-size:22px; font-weight:800;">{{ activeEventName }}</div>
-              <span style="font-weight:800; font-size:16px; color:{{ activeEventBarColor }};">{{ activeEventPctLabel }}%</span>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button onClick="{{ onEditActiveEvent }}" style="padding:6px 12px; border-radius:6px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Edit</button>
-              <button onClick="{{ onDeleteActiveEvent }}" style="padding:6px 12px; border-radius:6px; border:1px solid #E4B4AE; background:#FDEEEC; color:#B0362B; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#FBDFDA;">Delete</button>
-            </div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
+            <div style="font-size:22px; font-weight:800;">{{ activeEventName }}</div>
+            <span style="font-weight:800; font-size:16px; color:{{ activeEventBarColor }};">{{ activeEventPctLabel }}%</span>
           </div>
           <div style="height:8px; background:#F1F2F4; border-radius:4px; overflow:hidden;">
             <div style="height:100%; width:{{ activeEventBarWidth }}%; background:{{ activeEventBarColor }}; border-radius:4px;"></div>
           </div>
-          <div style="font-size:13px; color:#6B7280; margin-top:8px;">{{ activeEventSpentLabel }} / {{ activeEventAllocatedLabel }} spent</div>
+          <div style="font-size:13px; color:#6B7280; margin-top:8px; margin-bottom:32px;">{{ activeEventSpentLabel }} / {{ activeEventAllocatedLabel }} spent</div>
 
-          <sc-if value="{{ hasOwedList }}" hint-placeholder-val="{{ false }}">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:16px;">
-              <span style="font-size:12px; font-weight:700; color:#6B7280;">Owed:</span>
-              <sc-for list="{{ owedList }}" as="ow" hint-placeholder-count="2">
-                <span style="font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; background:#FDF6E3; color:#92710D;">{{ ow.name }} · {{ ow.amountLabel }}</span>
-              </sc-for>
-            </div>
-          </sc-if>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:32px; margin-bottom:12px;">
-            <div style="font-size:16px; font-weight:800;">Reimbursement requests</div>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <div style="display:flex; background:#F3F4F6; border-radius:8px; padding:3px;">
-                <button onClick="{{ onSetFilterAll }}" style="{{ filterAllStyle }}">All</button>
-                <button onClick="{{ onSetFilterPaid }}" style="{{ filterPaidStyle }}">Paid</button>
-                <button onClick="{{ onSetFilterUnpaid }}" style="{{ filterUnpaidStyle }}">Unpaid</button>
-              </div>
-              <button onClick="{{ onDownloadPaidReceipts }}" style="padding:7px 14px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Download paid receipts</button>
-            </div>
-          </div>
+          <div style="font-size:16px; font-weight:800; margin-bottom:12px;">Reimbursement requests</div>
           <sc-if value="{{ activeEventRequestsEmpty }}" hint-placeholder-val="{{ false }}">
-            <div style="border:1.5px dashed #E4E5E8; border-radius:12px; padding:24px; text-align:center; color:#9CA3AF; font-size:13px; margin-bottom:32px;">{{ activeEventEmptyMessage }}</div>
+            <div style="border:1.5px dashed #E4E5E8; border-radius:12px; padding:24px; text-align:center; color:#9CA3AF; font-size:13px; margin-bottom:32px;">No requests tagged to this event yet.</div>
           </sc-if>
           <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:32px;">
             <sc-for list="{{ activeEventRequests }}" as="req" hint-placeholder-count="3">
               <div style="background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:14px 16px; box-shadow:0 1px 2px rgba(16,24,32,0.04);">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-                  <div style="display:flex; align-items:center; gap:12px;">
-                    <sc-if value="{{ req.hasReceipt }}" hint-placeholder-val="{{ false }}">
-                      <img src="{{ req.previewUrl }}" onClick="{{ req.onOpenLightbox }}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #E4E5E8; cursor:pointer; flex-shrink:0;" />
-                    </sc-if>
-                    <div>
-                      <div style="font-weight:700; font-size:14px;">{{ req.merchant }}</div>
-                      <div style="font-size:12px; color:#9CA3AF; margin-top:2px;">{{ req.metaLine }}</div>
-                    </div>
+                  <div>
+                    <div style="font-weight:700; font-size:14px;">{{ req.merchant }}</div>
+                    <div style="font-size:12px; color:#9CA3AF; margin-top:2px;">{{ req.metaLine }}</div>
                   </div>
                   <div style="display:flex; align-items:center; gap:10px;">
                     <div style="font-weight:800; font-size:15px;">{{ req.amountLabel }}</div>
                     <div style="font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; background:{{ req.statusBg }}; color:{{ req.statusColor }};">{{ req.statusLabel }}</div>
-                    <sc-if value="{{ req.showPaidToggle }}" hint-placeholder-val="{{ false }}">
-                      <button onClick="{{ req.onTogglePaid }}" style="padding:4px 10px; border-radius:20px; border:1px solid {{ req.paidBorder }}; background:{{ req.paidBg }}; color:{{ req.paidColor }}; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;">{{ req.paidLabel }}</button>
-                    </sc-if>
-                    <button onClick="{{ req.onOpenDelete }}" style="width:26px; height:26px; border-radius:6px; border:1px solid #E4E5E8; background:#fff; color:#9CA3AF; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s ease, color 0.15s ease;" style-hover="background:#FDEEEC; color:#B0362B;">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                    </button>
                   </div>
                 </div>
               </div>
@@ -478,45 +443,10 @@
           <button onClick="{{ onCloseBudgetModal }}" style="flex:1; padding:11px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Cancel</button>
           <button onClick="{{ onAddBudget }}" style="flex:1; padding:11px; border-radius:8px; border:none; background:#374151; color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#1F2937;">{{ budgetSaveLabel }}</button>
         </div>
-      </div>
-    </div>
-  </sc-if>
-
-  <sc-if value="{{ deleteEventConfirmOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;">
-      <div style="background:#fff; border-radius:16px; padding:24px; max-width:380px; width:100%; display:flex; flex-direction:column; gap:14px; box-shadow:0 8px 24px rgba(16,24,32,0.15);">
-        <div style="font-size:17px; font-weight:800;">Delete "{{ activeEventName }}"?</div>
-        <div style="font-size:14px; color:#6B7280;">This cannot be undone.</div>
-        <sc-if value="{{ cannotDeleteActiveEvent }}" hint-placeholder-val="{{ false }}">
-          <div style="font-size:13px; color:#B45309; background:#FFF7ED; border:1px solid #FDE4C0; border-radius:8px; padding:8px 12px;">⚠ {{ deleteBlockedCount }} request(s) tagged to this event will also be deleted.</div>
+        <sc-if value="{{ isEditingBudget }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onDeleteBudget }}" style="padding:11px; border-radius:8px; border:1px solid #E4B4AE; background:#FDEEEC; color:#B0362B; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#FBDFDA;">Delete event budget</button>
         </sc-if>
-        <div style="display:flex; gap:10px; margin-top:8px;">
-          <button onClick="{{ onCloseDeleteEventConfirm }}" style="flex:1; padding:11px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Cancel</button>
-          <button onClick="{{ onConfirmDeleteActiveEvent }}" style="flex:1; padding:11px; border-radius:8px; border:none; background:#B0362B; color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#8F2C22;">Delete</button>
-        </div>
       </div>
-    </div>
-  </sc-if>
-
-  <sc-if value="{{ deleteRequestConfirmOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;">
-      <div style="background:#fff; border-radius:16px; padding:24px; max-width:380px; width:100%; display:flex; flex-direction:column; gap:14px; box-shadow:0 8px 24px rgba(16,24,32,0.15);">
-        <div style="font-size:17px; font-weight:800;">Delete request from "{{ deleteRequestMerchant }}"?</div>
-        <div style="font-size:14px; color:#6B7280;">This cannot be undone.</div>
-        <div style="display:flex; gap:10px; margin-top:8px;">
-          <button onClick="{{ onCloseDeleteRequestConfirm }}" style="flex:1; padding:11px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Cancel</button>
-          <button onClick="{{ onConfirmDeleteRequest }}" style="flex:1; padding:11px; border-radius:8px; border:none; background:#B0362B; color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#8F2C22;">Delete</button>
-        </div>
-      </div>
-    </div>
-  </sc-if>
-
-  <sc-if value="{{ hasLightbox }}" hint-placeholder-val="{{ false }}">
-    <div onClick="{{ onCloseLightbox }}" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:60; padding:20px; cursor:zoom-out;">
-      <img src="{{ lightboxUrl }}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px;" />
-      <button onClick="{{ onCloseLightbox }}" style="position:absolute; top:20px; right:20px; width:36px; height:36px; border-radius:8px; border:none; background:rgba(255,255,255,0.15); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s ease;" style-hover="background:rgba(255,255,255,0.25);">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="M6 6l12 12"></path></svg>
-      </button>
     </div>
   </sc-if>
 
@@ -540,6 +470,7 @@
 
 </x-dc>
 <script type="text/x-dc" data-dc-script>
+const MEMBERS = [{ id: 'me', name: 'You' }];
 const API_BASE = 'http://127.0.0.1:5001/api';
 
 const CATEGORIES = ['Food & Drinks', 'Supplies', 'Printing', 'Travel', 'Equipment', 'Other'];
@@ -596,6 +527,7 @@ function formatDateLabel(iso) {
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
+function getMemberName(id) { const m = MEMBERS.find(x => x.id === id); return m ? m.name : id; }
 function getBudgetName(budgets, id) { const b = budgets.find(x => x.id === id); return b ? b.name : ''; }
 function getSubsectionName(budgets, budgetId, subId) {
   const b = budgets.find(x => x.id === budgetId);
@@ -612,10 +544,7 @@ class Component extends DCLogic {
     this.selectedImgRef = React.createRef();
     this.videoRef = React.createRef();
     this.cameraStream = null;
-    let rememberedMemberName = '';
-    try { rememberedMemberName = localStorage.getItem('ledger_member_name') || ''; } catch (err) {}
     this.state = {
-      rememberedMemberName,
       role: 'member',
       screen: 'upload',
       uploadStatus: 'idle',
@@ -639,10 +568,6 @@ class Component extends DCLogic {
       subFormError: null,
       editingSubId: null,
       hoveredBudgetId: null,
-      lightboxUrl: null,
-      deleteEventConfirmOpen: false,
-      deleteRequestId: null,
-      requestFilter: 'all',
       budgets: [],
       requests: [],
     };
@@ -668,8 +593,6 @@ class Component extends DCLogic {
     }
   };
 
-  onOpenLightbox = (url) => this.setState({ lightboxUrl: url });
-  onCloseLightbox = () => this.setState({ lightboxUrl: null });
   onSelectMemberRole = () => this.setState({ role: 'member', screen: 'upload', selectedRequestId: null });
   onSelectTreasurerRole = () => this.setState({ role: 'treasurer', screen: 'queue', selectedRequestId: null });
   onGoUpload = () => this.setState({ screen: 'upload', draft: null, uploadStatus: 'idle', uploadError: null });
@@ -718,12 +641,10 @@ class Component extends DCLogic {
       this.setState({ budgetFormError: editingId ? "Couldn't save changes — check that the server is running." : "Couldn't save this event — check that the server is running." });
     }
   };
-  onEditActiveEvent = () => this.onOpenEditBudgetModal(this.state.activeEventId);
-  onDeleteActiveEvent = () => this.setState({ deleteEventConfirmOpen: true });
-  onCloseDeleteEventConfirm = () => this.setState({ deleteEventConfirmOpen: false });
-  onConfirmDeleteActiveEvent = async () => {
-    const id = this.state.activeEventId;
+  onDeleteBudget = async () => {
+    const id = this.state.editingBudgetId;
     if (!id) return;
+    if (!window.confirm('Delete this event budget? This cannot be undone.')) return;
     try {
       const res = await fetch(`${API_BASE}/budgets/${id}`, { method: 'DELETE' });
       if (!res.ok) {
@@ -732,50 +653,11 @@ class Component extends DCLogic {
       }
       this.setState(s => ({
         budgets: s.budgets.filter(b => b.id !== id),
-        requests: s.requests.filter(r => r.budgetId !== id),
-        deleteEventConfirmOpen: false,
+        budgetModalOpen: false, editingBudgetId: null, newBudgetName: '', newBudgetAllocated: '', budgetFormError: null,
       }));
-      this.onBackToEvents();
     } catch (err) {
-      this.setState({ deleteEventConfirmOpen: false, toast: err.message || "Couldn't delete this event." });
-      setTimeout(() => this.setState({ toast: null }), 2500);
+      this.setState({ budgetFormError: err.message || "Couldn't delete this event." });
     }
-  };
-
-  onOpenDeleteRequestConfirm = (id) => this.setState({ deleteRequestId: id });
-  onCloseDeleteRequestConfirm = () => this.setState({ deleteRequestId: null });
-  onConfirmDeleteRequest = async () => {
-    const id = this.state.deleteRequestId;
-    if (!id) return;
-    try {
-      const res = await fetch(`${API_BASE}/requests/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('request failed');
-      this.setState(s => ({ requests: s.requests.filter(r => r.id !== id), deleteRequestId: null }));
-    } catch (err) {
-      this.setState({ deleteRequestId: null, toast: "Couldn't delete this request — check that the server is running." });
-      setTimeout(() => this.setState({ toast: null }), 2500);
-    }
-  };
-
-  onSetRequestFilter = (filter) => this.setState({ requestFilter: filter });
-  onDownloadPaidReceipts = () => {
-    const targets = this.state.requests.filter(r => r.budgetId === this.state.activeEventId && r.status === 'approved' && r.paid && r.fileType === 'image' && r.previewUrl);
-    if (targets.length === 0) {
-      this.setState({ toast: 'No paid receipts to download yet.' });
-      setTimeout(() => this.setState({ toast: null }), 2500);
-      return;
-    }
-    targets.forEach((r, i) => {
-      setTimeout(() => {
-        const a = document.createElement('a');
-        a.href = r.previewUrl;
-        const safeName = (r.merchant || 'receipt').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-        a.download = `${safeName}-${r.date || r.id}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }, i * 300);
-    });
   };
 
   onNewSubNameChange = (e) => this.setState({ newSubName: e.target.value });
@@ -862,7 +744,7 @@ class Component extends DCLogic {
           amount: typeof data.amount === 'number' ? data.amount : (parseFloat(data.amount) || ''),
           date: data.date || '',
           category: CATEGORIES.includes(data.category) ? data.category : 'Other',
-          budgetId: '', subsectionId: '', memberName: this.state.rememberedMemberName, note: '', fileName, fileType, previewUrl,
+          budgetId: '', subsectionId: '', note: '', fileName, fileType, previewUrl,
           lineItems: Array.isArray(data.lineItems) ? data.lineItems.filter(li => li && li.description) : [],
         },
       });
@@ -870,7 +752,7 @@ class Component extends DCLogic {
       this.setState({
         uploadStatus: 'idle',
         screen: 'review',
-        draft: { merchant: '', amount: '', date: '', category: CATEGORIES[0], budgetId: '', subsectionId: '', memberName: this.state.rememberedMemberName, note: '', fileName, fileType, previewUrl, lineItems: [] },
+        draft: { merchant: '', amount: '', date: '', category: CATEGORIES[0], budgetId: '', subsectionId: '', note: '', fileName, fileType, previewUrl, lineItems: [] },
         toast: "Couldn't auto-read that receipt — please fill in the details.",
       });
       setTimeout(() => this.setState({ toast: null }), 3000);
@@ -916,11 +798,6 @@ class Component extends DCLogic {
   }
 
   updateDraft = (key, value) => this.setState(s => ({ draft: { ...s.draft, [key]: value } }));
-  onMemberNameChange = (e) => {
-    const value = e.target.value;
-    this.updateDraft('memberName', value);
-    try { localStorage.setItem('ledger_member_name', value); } catch (err) {}
-  };
   onMerchantChange = (e) => this.updateDraft('merchant', e.target.value);
   onAmountChange = (e) => this.updateDraft('amount', e.target.value);
   onDateChange = (e) => this.updateDraft('date', e.target.value);
@@ -933,13 +810,13 @@ class Component extends DCLogic {
 
   onSubmitDraft = async () => {
     const d = this.state.draft;
-    if (!d || !d.budgetId || !d.memberName || !d.memberName.trim()) return;
+    if (!d || !d.budgetId) return;
     try {
       const res = await fetch(`${API_BASE}/requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          memberId: 'me', memberName: d.memberName.trim(), merchant: d.merchant, amount: parseFloat(d.amount) || 0,
+          memberId: 'me', merchant: d.merchant, amount: parseFloat(d.amount) || 0,
           date: d.date, category: d.category, budgetId: d.budgetId || '', subsectionId: d.subsectionId || '', note: d.note,
           previewUrl: d.previewUrl, fileType: d.fileType,
         }),
@@ -955,10 +832,6 @@ class Component extends DCLogic {
   };
 
   selectRequest = (id) => {
-    if (this.state.selectedRequestId === id) {
-      this.setState({ selectedRequestId: null, reviewComment: '' });
-      return;
-    }
     const req = this.state.requests.find(r => r.id === id);
     this.setState({ selectedRequestId: id, reviewComment: (req && req.comment) || '' });
   };
@@ -988,22 +861,6 @@ class Component extends DCLogic {
   onApprove = () => this.decideRequest('approved');
   onReject = () => this.decideRequest('rejected');
 
-  onTogglePaid = async (id, paid) => {
-    try {
-      const res = await fetch(`${API_BASE}/requests/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paid }),
-      });
-      if (!res.ok) throw new Error('request failed');
-      const updated = await res.json();
-      this.setState(s => ({ requests: s.requests.map(r => r.id === id ? updated : r) }));
-    } catch (err) {
-      this.setState({ toast: "Couldn't update payment status — check that the server is running." });
-      setTimeout(() => this.setState({ toast: null }), 2500);
-    }
-  };
-
   componentDidUpdate() {
     const d = this.state.draft;
     if (this.draftImgRef.current && d && d.fileType === 'image' && d.previewUrl && this.draftImgRef.current.src !== d.previewUrl) {
@@ -1026,7 +883,7 @@ class Component extends DCLogic {
 
     const draft = s.draft;
     const budgetName = (id) => getBudgetName(s.budgets, id);
-    const canSubmitDraft = !!(draft && draft.budgetId && draft.memberName && draft.memberName.trim());
+    const canSubmitDraft = !!(draft && draft.budgetId);
     const submitBtnStyle = canSubmitDraft
       ? { padding: '11px 18px', borderRadius: '8px', border: 'none', background: '#374151', color: '#fff', fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'background 0.15s ease' }
       : { padding: '11px 18px', borderRadius: '8px', border: 'none', background: '#D1D5DB', color: '#9CA3AF', fontWeight: 700, fontSize: '14px', cursor: 'not-allowed' };
@@ -1040,17 +897,17 @@ class Component extends DCLogic {
 
     const pendingList = s.requests.filter(r => r.status === 'pending');
     const pendingRequests = pendingList.map(r => ({
-      ...r, memberName: r.memberName || 'Unknown', initial: (r.memberName || 'Unknown')[0].toUpperCase(),
+      ...r, memberName: getMemberName(r.memberId), initial: getMemberName(r.memberId)[0],
       dateLabel: formatDateLabel(r.date), amountLabel: formatCurrency(r.amount),
       rowBg: s.selectedRequestId === r.id ? '#F3F4F6' : '#fff',
       rowBorder: s.selectedRequestId === r.id ? '#C9CDD3' : '#E4E5E8',
-      metaLine: (r.memberName || 'Unknown') + ' · ' + formatDateLabel(r.date) + (budgetName(r.budgetId) ? ' · ' + budgetName(r.budgetId) : ''),
+      metaLine: getMemberName(r.memberId) + ' · ' + formatDateLabel(r.date) + (budgetName(r.budgetId) ? ' · ' + budgetName(r.budgetId) : ''),
       onSelect: () => this.selectRequest(r.id),
     }));
     const selectedRaw = s.requests.find(r => r.id === s.selectedRequestId);
     const subsectionName = (budgetId, subId) => getSubsectionName(s.budgets, budgetId, subId);
     const selected = selectedRaw ? {
-      ...selectedRaw, memberName: selectedRaw.memberName || 'Unknown', dateLabel: formatDateLabel(selectedRaw.date),
+      ...selectedRaw, memberName: getMemberName(selectedRaw.memberId), dateLabel: formatDateLabel(selectedRaw.date),
       amountLabel: formatCurrency(selectedRaw.amount), hasNote: !!selectedRaw.note,
       previewIsImage: selectedRaw.fileType === 'image' && !!selectedRaw.previewUrl,
       previewIsPlaceholder: !(selectedRaw.fileType === 'image' && !!selectedRaw.previewUrl),
@@ -1059,7 +916,6 @@ class Component extends DCLogic {
       subsectionLabel: subsectionName(selectedRaw.budgetId, selectedRaw.subsectionId),
       hasOverBudgetWarning: !!overBudgetWarning(s.budgets, s.requests, selectedRaw.budgetId, selectedRaw.subsectionId, selectedRaw.amount, selectedRaw.id),
       overBudgetWarningText: overBudgetWarning(s.budgets, s.requests, selectedRaw.budgetId, selectedRaw.subsectionId, selectedRaw.amount, selectedRaw.id),
-      onOpenLightbox: () => this.onOpenLightbox(selectedRaw.previewUrl),
     } : null;
 
     const budgetSelectOptions = [{ id: '', name: 'No budget' }, ...s.budgets];
@@ -1077,7 +933,10 @@ class Component extends DCLogic {
       return {
         ...b, count: linked.length,
         spentLabel: formatCurrency(spent), allocatedLabel: formatCurrency(b.allocated), ...stats,
+        onEdit: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.onOpenEditBudgetModal(b.id); },
         onManage: () => this.onOpenEventPage(b.id),
+        hasSubsections: subCount > 0,
+        subsectionsHint: subCount > 0 ? (subCount + (subCount === 1 ? ' subsection' : ' subsections') + ' · click to manage') : 'Click to add subsections',
         hoverSubsections,
         isHovered: s.hoveredBudgetId === b.id && subCount > 0,
         onHoverEnter: () => this.setState({ hoveredBudgetId: b.id }),
@@ -1105,44 +964,14 @@ class Component extends DCLogic {
       ? barStats(s.requests.filter(r => r.budgetId === activeEvent.id && r.status === 'approved').reduce((sum, r) => sum + r.amount, 0), activeEvent.allocated)
       : { pctLabel: 0, barWidth: 0, barColor: '#1F7A4D' };
     const activeEventSpent = activeEvent ? s.requests.filter(r => r.budgetId === activeEvent.id && r.status === 'approved').reduce((sum, r) => sum + r.amount, 0) : 0;
-    const activeEventRequests = activeEvent ? s.requests.filter(r => r.budgetId === activeEvent.id)
-      .filter(r => s.requestFilter === 'all' ? true : s.requestFilter === 'paid' ? (r.status === 'approved' && r.paid) : (r.status === 'approved' && !r.paid))
-      .sort((a, b) => b.id - a.id).map(r => {
+    const activeEventRequests = activeEvent ? s.requests.filter(r => r.budgetId === activeEvent.id).sort((a, b) => b.id - a.id).map(r => {
       const subLabel = getSubsectionName(s.budgets, r.budgetId, r.subsectionId);
-      const name = r.memberName || 'Unknown';
       return {
-        ...r, dateLabel: formatDateLabel(r.date), amountLabel: formatCurrency(r.amount), memberName: name,
+        ...r, dateLabel: formatDateLabel(r.date), amountLabel: formatCurrency(r.amount), memberName: getMemberName(r.memberId),
         statusLabel: STATUS_META[r.status].label, statusColor: STATUS_META[r.status].color, statusBg: STATUS_META[r.status].bg,
-        metaLine: name + ' · ' + formatDateLabel(r.date) + (subLabel ? ' · ' + subLabel : ''),
-        hasReceipt: r.fileType === 'image' && !!r.previewUrl,
-        onOpenLightbox: () => this.onOpenLightbox(r.previewUrl),
-        showPaidToggle: r.status === 'approved',
-        paidLabel: r.paid ? 'Paid ✓' : 'Mark as paid',
-        paidBg: r.paid ? '#EAF7EF' : '#fff', paidColor: r.paid ? '#1F7A4D' : '#4B5563', paidBorder: r.paid ? '#BFE3CC' : '#E4E5E8',
-        onTogglePaid: () => this.onTogglePaid(r.id, !r.paid),
-        onOpenDelete: () => this.onOpenDeleteRequestConfirm(r.id),
+        metaLine: getMemberName(r.memberId) + ' · ' + formatDateLabel(r.date) + (subLabel ? ' · ' + subLabel : ''),
       };
     }) : [];
-
-    const deleteRequestTarget = s.requests.find(r => r.id === s.deleteRequestId);
-
-    const filterPillStyle = (active) => active
-      ? 'flex:1; padding:6px 14px; border-radius:6px; border:none; background:#374151; color:#fff; font-weight:700; font-size:12px; cursor:pointer;'
-      : 'flex:1; padding:6px 14px; border-radius:6px; border:none; background:transparent; color:#6B7280; font-weight:700; font-size:12px; cursor:pointer;';
-    const activeEventEmptyMessage = s.requestFilter === 'paid' ? 'No paid requests yet.'
-      : s.requestFilter === 'unpaid' ? 'Nothing owed right now.'
-      : 'No requests tagged to this event yet.';
-
-    const owedMap = {};
-    if (activeEvent) {
-      s.requests.forEach(r => {
-        if (r.budgetId === activeEvent.id && r.status === 'approved' && !r.paid) {
-          const name = r.memberName || 'Unknown';
-          owedMap[name] = (owedMap[name] || 0) + r.amount;
-        }
-      });
-    }
-    const owedList = Object.keys(owedMap).sort().map(name => ({ name, amountLabel: formatCurrency(owedMap[name]) }));
 
     return {
       isMember, isTreasurer,
@@ -1168,7 +997,6 @@ class Component extends DCLogic {
       onOpenCamera: this.openCamera, onCloseCamera: this.closeCamera, onCapturePhoto: this.capturePhoto,
       cameraOpen: s.cameraOpen, hasCameraError: !!s.cameraError, cameraError: s.cameraError || '', videoRef: this.videoRef,
 
-      draftMemberName: draft ? (draft.memberName || '') : '', onMemberNameChange: this.onMemberNameChange,
       draftMerchant: draft ? draft.merchant : '', draftAmount: draft ? draft.amount : '',
       draftDate: draft ? draft.date : '', draftCategory: draft ? draft.category : '',
       draftNote: draft ? draft.note : '', draftFileName: draft ? draft.fileName : '',
@@ -1201,25 +1029,13 @@ class Component extends DCLogic {
       budgetModalOpen: s.budgetModalOpen, onOpenBudgetModal: this.onOpenBudgetModal, onCloseBudgetModal: this.onCloseBudgetModal,
       hasBudgetFormError: !!s.budgetFormError, budgetFormError: s.budgetFormError || '',
       isEditingBudget: !!s.editingBudgetId, budgetModalTitle: s.editingBudgetId ? 'Edit event budget' : 'Create event budget',
-      budgetSaveLabel: s.editingBudgetId ? 'Save changes' : 'Create',
+      budgetSaveLabel: s.editingBudgetId ? 'Save changes' : 'Create', onDeleteBudget: this.onDeleteBudget,
 
       activeEventFound: !!activeEvent, activeEventNotFound: s.budgetsLoaded && !activeEvent, activeEventName: activeEvent ? activeEvent.name : '',
       activeEventSpentLabel: formatCurrency(activeEventSpent), activeEventAllocatedLabel: activeEvent ? formatCurrency(activeEvent.allocated) : '',
       activeEventPctLabel: activeEventStats.pctLabel, activeEventBarWidth: activeEventStats.barWidth, activeEventBarColor: activeEventStats.barColor,
       onBackToEvents: this.onBackToEvents,
-      onEditActiveEvent: this.onEditActiveEvent, onDeleteActiveEvent: this.onDeleteActiveEvent,
-      deleteEventConfirmOpen: s.deleteEventConfirmOpen,
-      cannotDeleteActiveEvent: activeEventRequests.length > 0,
-      deleteBlockedCount: activeEventRequests.length,
-      onCloseDeleteEventConfirm: this.onCloseDeleteEventConfirm, onConfirmDeleteActiveEvent: this.onConfirmDeleteActiveEvent,
-
-      deleteRequestConfirmOpen: !!s.deleteRequestId, deleteRequestMerchant: deleteRequestTarget ? deleteRequestTarget.merchant : '',
-      onCloseDeleteRequestConfirm: this.onCloseDeleteRequestConfirm, onConfirmDeleteRequest: this.onConfirmDeleteRequest,
-      activeEventRequests, activeEventRequestsEmpty: activeEventRequests.length === 0, activeEventEmptyMessage,
-      filterAllStyle: filterPillStyle(s.requestFilter === 'all'), filterPaidStyle: filterPillStyle(s.requestFilter === 'paid'), filterUnpaidStyle: filterPillStyle(s.requestFilter === 'unpaid'),
-      onSetFilterAll: () => this.onSetRequestFilter('all'), onSetFilterPaid: () => this.onSetRequestFilter('paid'), onSetFilterUnpaid: () => this.onSetRequestFilter('unpaid'),
-      onDownloadPaidReceipts: this.onDownloadPaidReceipts,
-      owedList, hasOwedList: owedList.length > 0,
+      activeEventRequests, activeEventRequestsEmpty: activeEventRequests.length === 0,
 
       subsectionRows, hasSubsectionRows: subsectionRows.length > 0, hasNoSubsectionRows: subsectionRows.length === 0,
       newSubName: s.newSubName, newSubAllocated: s.newSubAllocated,
@@ -1229,8 +1045,6 @@ class Component extends DCLogic {
       isEditingSub: !!s.editingSubId, onCancelEditSubsection: this.onCancelEditSubsection,
       subFormLabel: s.editingSubId ? 'Edit subsection' : 'Add a subsection',
       subSaveLabel: s.editingSubId ? 'Save changes' : 'Add subsection',
-
-      hasLightbox: !!s.lightboxUrl, lightboxUrl: s.lightboxUrl || '', onCloseLightbox: this.onCloseLightbox,
 
       hasToast: !!s.toast, toastMsg: s.toast || '',
     };

@@ -66,10 +66,7 @@ def delete_budget(budget_id):
     if not budget:
         return jsonify(error="budget not found"), 404
 
-    linked = [r for r in storage.requests if r["budgetId"] == budget_id]
-    if linked:
-        return jsonify(error=f"can't delete — {len(linked)} request(s) are tagged to this event"), 400
-
+    storage.requests[:] = [r for r in storage.requests if r["budgetId"] != budget_id]
     storage.budgets.remove(budget)
     return "", 204
 
@@ -176,9 +173,12 @@ def create_request():
     category = data.get("category") or "Other"
     budget_id = data.get("budgetId") or ""
     subsection_id = data.get("subsectionId") or ""
+    member_name = (data.get("memberName") or "").strip()
 
     if not merchant:
         return jsonify(error="merchant is required"), 400
+    if not member_name:
+        return jsonify(error="memberName is required"), 400
     try:
         amount = float(amount)
     except (TypeError, ValueError):
@@ -196,6 +196,7 @@ def create_request():
     new_request = {
         "id": storage.next_request_id(),
         "memberId": data.get("memberId") or "me",
+        "memberName": member_name,
         "merchant": merchant,
         "amount": amount,
         "date": date,
@@ -205,6 +206,7 @@ def create_request():
         "note": data.get("note") or "",
         "status": "pending",
         "comment": "",
+        "paid": False,
         "previewUrl": data.get("previewUrl"),
         "fileType": data.get("fileType"),
     }
@@ -226,8 +228,23 @@ def update_request(request_id):
         req["status"] = status
     if "comment" in data:
         req["comment"] = data.get("comment") or ""
+    if "paid" in data:
+        paid = data.get("paid")
+        if not isinstance(paid, bool):
+            return jsonify(error="paid must be a boolean"), 400
+        req["paid"] = paid
 
     return jsonify(req)
+
+
+@bp.delete("/requests/<int:request_id>")
+def delete_request(request_id):
+    req = next((r for r in storage.requests if r["id"] == request_id), None)
+    if not req:
+        return jsonify(error="request not found"), 404
+
+    storage.requests.remove(req)
+    return "", 204
 
 
 # ---- Receipt OCR ----
