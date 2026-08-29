@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; }
+    * { box-sizing: border-box; font-family: 'Nunito', sans-serif; }
+    input, textarea, select, button { font-family: 'Nunito', sans-serif; }
+    a { color: #4B5563; }
+    a:hover { color: #1F2937; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</helmet>
+<div style="min-height:100vh; background:#FAFAFB; color:#1F2124;">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; padding:20px 32px; border-bottom:1px solid #E4E5E8; background:#FFFFFF; box-shadow:0 1px 2px rgba(16,24,32,0.03);">
+    <div>
+      <div style="font-size:21px; font-weight:800; letter-spacing:-0.02em;">Ledger</div>
+      <div style="font-size:13px; color:#6B7280; font-weight:600;">Club expense &amp; reimbursement tracker</div>
+    </div>
+    <div style="display:flex; background:#F3F4F6; border-radius:10px; padding:4px; gap:4px;">
+      <button onClick="{{ onSelectMemberRole }}" style="{{ memberRoleBtnStyle }}" style-hover="opacity:0.85;">Member view</button>
+      <button onClick="{{ onSelectTreasurerRole }}" style="{{ treasurerRoleBtnStyle }}" style-hover="opacity:0.85;">Treasurer view</button>
+    </div>
+  </div>
+
+  <sc-if value="{{ isMember }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex; gap:8px; padding:0 32px; border-bottom:1px solid #E4E5E8; background:#FFFFFF; flex-wrap:wrap;">
+      <button onClick="{{ onGoUpload }}" style="{{ tabUploadStyle }}" style-hover="color:#374151;">New request</button>
+      <button onClick="{{ onGoHistory }}" style="{{ tabHistoryStyle }}" style-hover="color:#374151;">My requests</button>
+    </div>
+  </sc-if>
+  <sc-if value="{{ isTreasurer }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex; gap:8px; padding:0 32px; border-bottom:1px solid #E4E5E8; background:#FFFFFF; flex-wrap:wrap;">
+      <button onClick="{{ onGoQueue }}" style="{{ tabQueueStyle }}" style-hover="color:#374151;">Review queue</button>
+      <button onClick="{{ onGoBudgets }}" style="{{ tabBudgetsStyle }}" style-hover="color:#374151;">Events</button>
+    </div>
+  </sc-if>
+
+  <div style="max-width:960px; margin:0 auto; padding:32px 24px 80px;">
+
+    <sc-if value="{{ isUpload }}" hint-placeholder-val="{{ true }}">
+      <sc-if value="{{ hasActiveEvents }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:20px;">
+          <div style="font-size:12px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:10px;">Active events</div>
+          <div style="display:flex; gap:12px; overflow-x:auto; padding-bottom:4px;">
+            <sc-for list="{{ budgetSummaries }}" as="b" hint-placeholder-count="2">
+              <div style="flex-shrink:0; width:200px; background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:14px 16px; box-shadow:0 1px 2px rgba(16,24,32,0.04);">
+                <div style="font-weight:700; font-size:14px; margin-bottom:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ b.name }}</div>
+                <div style="height:6px; background:#F1F2F4; border-radius:3px; overflow:hidden; margin-bottom:6px;">
+                  <div style="height:100%; width:{{ b.barWidth }}%; background:{{ b.barColor }}; border-radius:3px;"></div>
+                </div>
+                <div style="font-size:12px; color:#9CA3AF;">{{ b.spentLabel }} / {{ b.allocatedLabel }} spent</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <div style="background:#FFFFFF; border:1px solid #E4E5E8; border-radius:16px; padding:40px; text-align:center; box-shadow:0 1px 3px rgba(16,24,32,0.05);">
+        <sc-if value="{{ isProcessing }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:16px; padding:24px 0;">
+            <div style="width:40px; height:40px; border-radius:50%; border:3px solid #E4E5E8; border-top-color:#4B5563; animation:spin 0.8s linear infinite;"></div>
+            <div style="font-size:16px; font-weight:700;">Reading receipt…</div>
+            <div style="font-size:13px; color:#9CA3AF;">{{ processingFileName }}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isIdleUpload }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="font-size:20px; font-weight:800; margin-bottom:8px;">Add a receipt</div>
+            <div style="font-size:14px; color:#6B7280; max-width:420px; margin:0 auto 24px; line-height:1.5;">Drag and drop a file, or click to choose one. We'll pull out the merchant, amount, and date automatically.</div>
+            <label onDragOver="{{ onDragOver }}" onDrop="{{ onDrop }}" style="display:block; border:2px dashed #D1D5DB; border-radius:14px; padding:40px 20px; cursor:pointer; background:#FAFAFB; transition:border-color 0.15s ease, background 0.15s ease;" style-hover="border-color:#9CA3AF; background:#F3F4F6;">
+              <div style="font-size:15px; font-weight:700; margin-bottom:4px;">Click to upload or drag a file here</div>
+              <div style="font-size:13px; color:#9CA3AF;">PDF or image, any receipt or quote</div>
+              <input type="file" onChange="{{ onFileChange }}" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;" />
+            </label>
+            <sc-if value="{{ hasUploadError }}" hint-placeholder-val="{{ false }}">
+              <div style="color:#B0362B; font-size:13px; font-weight:700; margin-top:12px;">{{ uploadError }}</div>
+            </sc-if>
+            <button onClick="{{ onOpenCamera }}" style="margin-top:20px; padding:11px 22px; border-radius:10px; border:1px solid #E4E5E8; background:#fff; font-size:14px; font-weight:700; color:#374151; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Take a photo</button>
+            <sc-if value="{{ hasCameraError }}" hint-placeholder-val="{{ false }}">
+              <div style="color:#B0362B; font-size:13px; font-weight:700; margin-top:10px;">{{ cameraError }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size:13px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:16px;">Auto-filled from your receipt — check it's right</div>
+        <div style="display:flex; gap:24px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:260px;">
+            <sc-if value="{{ previewIsImage }}" hint-placeholder-val="{{ false }}">
+              <img ref="{{ draftImgRef }}" style="width:100%; max-height:420px; object-fit:contain; border:1px solid #E4E5E8; border-radius:12px; background:#fff;" />
+            </sc-if>
+            <sc-if value="{{ previewIsPdf }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid #E4E5E8; border-radius:12px; background:repeating-linear-gradient(135deg, #F6F6F7 0px, #F6F6F7 10px, #FFFFFF 10px, #FFFFFF 20px); height:280px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;">
+                <div style="font-family:monospace; font-size:12px; color:#6B7280; background:#FFFFFF; padding:4px 10px; border-radius:6px; border:1px solid #E4E5E8;">PDF FILE</div>
+                <div style="font-size:13px; color:#6B7280; font-weight:600;">{{ draftFileName }}</div>
+              </div>
+            </sc-if>
+          </div>
+          <div style="flex:1.3; min-width:280px; display:flex; flex-direction:column; gap:16px;">
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Merchant</label>
+              <input value="{{ draftMerchant }}" onChange="{{ onMerchantChange }}" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px;" />
+            </div>
+            <div style="display:flex; gap:12px;">
+              <div style="flex:1;">
+                <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Amount</label>
+                <div style="position:relative;">
+                  <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:15px;">$</span>
+                  <input type="number" step="0.01" min="0" value="{{ draftAmount }}" onChange="{{ onAmountChange }}" style="width:100%; padding:10px 12px 10px 26px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px;" />
+                </div>
+              </div>
+              <div style="flex:1;">
+                <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Date</label>
+                <input type="date" value="{{ draftDate }}" onChange="{{ onDateChange }}" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px;" />
+              </div>
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Category</label>
+              <select value="{{ draftCategory }}" onChange="{{ onCategoryChange }}" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px; background:#fff;">
+                <sc-for list="{{ categoryOptions }}" as="cat" hint-placeholder-count="6">
+                  <option value="{{ cat }}">{{ cat }}</option>
+                </sc-for>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Budget / event</label>
+              <select value="{{ draftBudgetId }}" onChange="{{ onBudgetChange }}" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px; background:#fff;">
+                <sc-for list="{{ budgetSelectOptions }}" as="b" hint-placeholder-count="4">
+                  <option value="{{ b.id }}">{{ b.name }}</option>
+                </sc-for>
+              </select>
+            </div>
+            <sc-if value="{{ hasLineItems }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Items detected</label>
+                <div style="display:flex; flex-direction:column; gap:4px; background:#F9FAFB; border-radius:8px; padding:10px 12px;">
+                  <sc-for list="{{ draftLineItems }}" as="li" hint-placeholder-count="3">
+                    <div style="display:flex; justify-content:space-between; font-size:13px; color:#4B5563;">
+                      <span>{{ li.description }}</span><span>{{ li.costLabel }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Note (optional)</label>
+              <textarea value="{{ draftNote }}" onChange="{{ onNoteChange }}" placeholder="What was this for?" rows="2" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px; resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:8px; align-items:center; flex-wrap:wrap;">
+              <button onClick="{{ onCancelDraft }}" style="padding:11px 18px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Cancel</button>
+              <button onClick="{{ onSubmitDraft }}" disabled="{{ submitDisabled }}" style="{{ submitBtnStyle }}" style-hover="{{ submitBtnHoverStyle }}">Submit for reimbursement</button>
+            </div>
+            <sc-if value="{{ noBudgetsAtAll }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:12px; color:#9CA3AF;">No budget allocated yet — ask your treasurer to create one before submitting.</div>
+            </sc-if>
+            <sc-if value="{{ needsBudgetPick }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:12px; color:#9CA3AF;">Select a budget/event above before submitting.</div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isHistory }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size:20px; font-weight:800; margin-bottom:20px;">My requests</div>
+        <sc-if value="{{ myRequestsEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1.5px dashed #E4E5E8; border-radius:12px; padding:32px; text-align:center; color:#9CA3AF; font-size:14px;">No requests yet — upload a receipt to get started.</div>
+        </sc-if>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <sc-for list="{{ myRequests }}" as="req" hint-placeholder-count="3">
+            <div style="background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:16px 20px; box-shadow:0 1px 2px rgba(16,24,32,0.04);">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div style="width:32px; height:32px; border-radius:50%; background:#EEF0F2; color:#4B5563; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">Y</div>
+                  <div>
+                    <div style="font-weight:700; font-size:15px;">{{ req.merchant }}</div>
+                    <div style="font-size:13px; color:#9CA3AF; margin-top:2px;">{{ req.metaLine }}</div>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div style="font-weight:800; font-size:16px;">{{ req.amountLabel }}</div>
+                  <div style="font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; background:{{ req.statusBg }}; color:{{ req.statusColor }};">{{ req.statusLabel }}</div>
+                </div>
+              </div>
+              <sc-if value="{{ req.hasComment }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:10px; font-size:13px; color:#4B5563; background:#F9FAFB; border-radius:8px; padding:8px 12px;">Treasurer: {{ req.comment }}</div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isQueue }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size:20px; font-weight:800; margin-bottom:20px;">Pending requests ({{ pendingCount }})</div>
+        <div style="display:flex; gap:24px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:300px; display:flex; flex-direction:column; gap:10px;">
+            <sc-if value="{{ pendingEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1.5px dashed #E4E5E8; border-radius:12px; padding:32px; text-align:center; color:#9CA3AF; font-size:14px;">All caught up — no pending requests.</div>
+            </sc-if>
+            <sc-for list="{{ pendingRequests }}" as="req" hint-placeholder-count="3">
+              <div onClick="{{ req.onSelect }}" style="background:{{ req.rowBg }}; border:1px solid {{ req.rowBorder }}; border-radius:12px; padding:14px 16px; cursor:pointer; display:flex; align-items:center; gap:12px; box-shadow:0 1px 2px rgba(16,24,32,0.03); transition:transform 0.15s ease, box-shadow 0.15s ease;" style-hover="transform:translateY(-1px); box-shadow:0 4px 10px rgba(16,24,32,0.08);">
+                <div style="width:32px; height:32px; border-radius:50%; background:#EEF0F2; color:#4B5563; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">{{ req.initial }}</div>
+                <div style="flex:1;">
+                  <div style="font-weight:700; font-size:14px;">{{ req.merchant }}</div>
+                  <div style="font-size:12px; color:#9CA3AF;">{{ req.metaLine }}</div>
+                </div>
+                <div style="font-weight:800; font-size:15px;">{{ req.amountLabel }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:1.2; min-width:300px;">
+            <sc-if value="{{ hasSelectedRequest }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:20px; animation:fadeIn 0.2s ease; box-shadow:0 2px 6px rgba(16,24,32,0.05);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                  <div>
+                    <div style="font-size:17px; font-weight:800;">{{ selected.merchant }}</div>
+                    <div style="font-size:13px; color:#9CA3AF; margin-top:2px;">{{ selected.memberName }} · {{ selected.dateLabel }}</div>
+                  </div>
+                  <div style="font-size:20px; font-weight:800;">{{ selected.amountLabel }}</div>
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:14px;">
+                  <div style="font-size:12px; font-weight:700; display:inline-block; padding:4px 10px; border-radius:6px; background:#F1F2F4; color:#4B5563;">{{ selected.category }}</div>
+                  <sc-if value="{{ selected.hasBudget }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:12px; font-weight:700; display:inline-block; padding:4px 10px; border-radius:6px; background:#EEF0F2; color:#6B7280;">{{ selected.budgetLabel }}</div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ selected.hasNote }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:14px; color:#4B5563; margin-bottom:14px;">"{{ selected.note }}"</div>
+                </sc-if>
+                <sc-if value="{{ selected.previewIsImage }}" hint-placeholder-val="{{ false }}">
+                  <img ref="{{ selectedImgRef }}" style="width:100%; max-height:220px; object-fit:contain; border:1px solid #E4E5E8; border-radius:10px; margin-bottom:14px; background:#fff;" />
+                </sc-if>
+                <sc-if value="{{ selected.previewIsPlaceholder }}" hint-placeholder-val="{{ false }}">
+                  <div style="border:1px solid #E4E5E8; border-radius:10px; background:repeating-linear-gradient(135deg, #F6F6F7 0px, #F6F6F7 10px, #FFFFFF 10px, #FFFFFF 20px); height:120px; display:flex; align-items:center; justify-content:center; margin-bottom:14px;">
+                    <div style="font-family:monospace; font-size:11px; color:#6B7280; background:#FFFFFF; padding:3px 8px; border-radius:6px; border:1px solid #E4E5E8;">RECEIPT IMAGE</div>
+                  </div>
+                </sc-if>
+                <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Comment (optional)</label>
+                <textarea value="{{ reviewComment }}" onChange="{{ onCommentChange }}" placeholder="Add a note for the member" rows="2" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px; resize:vertical; margin-bottom:14px;"></textarea>
+                <div style="display:flex; gap:10px;">
+                  <button onClick="{{ onReject }}" style="flex:1; padding:11px; border-radius:8px; border:1px solid #E4B4AE; background:#FDEEEC; color:#B0362B; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#FBDFDA;">Reject</button>
+                  <button onClick="{{ onApprove }}" style="flex:1; padding:11px; border-radius:8px; border:none; background:#1F7A4D; color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#175E3B;">Approve</button>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ hasNoSelectedRequest }}" hint-placeholder-val="{{ true }}">
+              <div style="color:#9CA3AF; font-size:14px; padding:20px;">Select a request to review.</div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isBudgets }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size:20px; font-weight:800; margin-bottom:4px;">Events</div>
+        <div style="font-size:13px; color:#9CA3AF; margin-bottom:20px;">Create a budget for each event so members can tag what they spent it on.</div>
+        <button onClick="{{ onOpenBudgetModal }}" style="margin-bottom:24px; padding:10px 18px; border-radius:8px; border:none; background:#374151; color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#1F2937;">Create Event Budget</button>
+        <sc-if value="{{ budgetsEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1.5px dashed #E4E5E8; border-radius:12px; padding:32px; text-align:center; color:#9CA3AF; font-size:14px;">No event budgets yet — create one above.</div>
+        </sc-if>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <sc-for list="{{ budgetSummaries }}" as="b" hint-placeholder-count="3">
+            <div style="background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:16px 18px; box-shadow:0 1px 2px rgba(16,24,32,0.04);">
+              <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
+                <div style="font-weight:700; font-size:15px;">{{ b.name }}</div>
+                <div style="font-size:12px; color:#9CA3AF;">{{ b.count }} requests tagged</div>
+              </div>
+              <div style="height:8px; background:#F1F2F4; border-radius:4px; overflow:hidden;">
+                <div style="height:100%; width:{{ b.barWidth }}%; background:{{ b.barColor }}; border-radius:4px;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:13px;">
+                <span style="color:#6B7280;">{{ b.spentLabel }} / {{ b.allocatedLabel }} spent</span>
+                <span style="font-weight:700; color:{{ b.barColor }};">{{ b.pctLabel }}%</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <sc-if value="{{ budgetModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;">
+      <div style="background:#fff; border-radius:16px; padding:24px; max-width:380px; width:100%; display:flex; flex-direction:column; gap:14px; box-shadow:0 8px 24px rgba(16,24,32,0.15);">
+        <div style="font-size:17px; font-weight:800;">Create event budget</div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Event name</label>
+          <input value="{{ newBudgetName }}" onChange="{{ onNewBudgetNameChange }}" placeholder="e.g. Fall Social" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Allocated budget</label>
+          <div style="position:relative;">
+            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:14px;">$</span>
+            <input type="number" min="0" value="{{ newBudgetAllocated }}" onChange="{{ onNewBudgetAllocatedChange }}" placeholder="0.00" style="width:100%; padding:10px 12px 10px 24px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
+          </div>
+        </div>
+        <sc-if value="{{ hasBudgetFormError }}" hint-placeholder-val="{{ false }}">
+          <div style="color:#B0362B; font-size:13px; font-weight:700;">{{ budgetFormError }}</div>
+        </sc-if>
+        <div style="display:flex; gap:10px; margin-top:8px;">
+          <button onClick="{{ onCloseBudgetModal }}" style="flex:1; padding:11px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Cancel</button>
+          <button onClick="{{ onAddBudget }}" style="flex:1; padding:11px; border-radius:8px; border:none; background:#374151; color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#1F2937;">Create</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ cameraOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;">
+      <div style="background:#111318; border-radius:16px; padding:20px; max-width:480px; width:100%; display:flex; flex-direction:column; gap:14px; align-items:center;">
+        <video ref="{{ videoRef }}" autoPlay="{{ true }}" playsInline="{{ true }}" muted="{{ true }}" style="width:100%; border-radius:10px; background:#000;"></video>
+        <div style="display:flex; gap:10px; width:100%;">
+          <button onClick="{{ onCloseCamera }}" style="flex:1; padding:11px; border-radius:8px; border:1px solid #444; background:transparent; color:#fff; font-weight:700; font-size:14px; cursor:pointer;">Cancel</button>
+          <button onClick="{{ onCapturePhoto }}" style="flex:1; padding:11px; border-radius:8px; border:none; background:#fff; color:#111318; font-weight:700; font-size:14px; cursor:pointer;">Capture</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; bottom:24px; right:24px; background:#1F2124; color:#fff; padding:12px 20px; border-radius:10px; font-size:14px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.18); animation:fadeIn 0.2s ease;">{{ toastMsg }}</div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const MEMBERS = [{ id: 'me', name: 'You' }];
+const API_BASE = 'http://127.0.0.1:5000/api';
+
+const CATEGORIES = ['Food & Drinks', 'Supplies', 'Printing', 'Travel', 'Equipment', 'Other'];
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+const STATUS_META = {
+  pending: { label: 'Pending', color: '#92710D', bg: '#FDF6E3' },
+  approved: { label: 'Approved', color: '#1F7A4D', bg: '#EAF7EF' },
+  rejected: { label: 'Rejected', color: '#B0362B', bg: '#FDEEEC' },
+};
+
+function formatCurrency(n) { return '$' + Number(n || 0).toFixed(2); }
+function formatDateLabel(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function getMemberName(id) { const m = MEMBERS.find(x => x.id === id); return m ? m.name : id; }
+function getBudgetName(budgets, id) { const b = budgets.find(x => x.id === id); return b ? b.name : ''; }
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.nextId = 7;
+    this.nextBudgetId = 4;
+    this.draftImgRef = React.createRef();
+    this.selectedImgRef = React.createRef();
+    this.videoRef = React.createRef();
+    this.cameraStream = null;
+    this.state = {
+      role: 'member',
+      screen: 'upload',
+      uploadStatus: 'idle',
+      processingFileName: '',
+      uploadError: null,
+      cameraOpen: false,
+      cameraError: null,
+      draft: null,
+      selectedRequestId: null,
+      reviewComment: '',
+      toast: null,
+      newBudgetName: '',
+      newBudgetAllocated: '',
+      budgetModalOpen: false,
+      budgetFormError: null,
+      budgets: [],
+      requests: [],
+    };
+  }
+
+  componentDidMount() {
+    fetch(`${API_BASE}/budgets`).then(r => r.json()).then(budgets => this.setState({ budgets })).catch(() => {});
+    fetch(`${API_BASE}/requests`).then(r => r.json()).then(requests => this.setState({ requests })).catch(() => {});
+  }
+
+  onSelectMemberRole = () => this.setState({ role: 'member', screen: 'upload', selectedRequestId: null });
+  onSelectTreasurerRole = () => this.setState({ role: 'treasurer', screen: 'queue', selectedRequestId: null });
+  onGoUpload = () => this.setState({ screen: 'upload', draft: null, uploadStatus: 'idle', uploadError: null });
+  onGoHistory = () => this.setState({ screen: 'history' });
+  onGoQueue = () => this.setState({ screen: 'queue' });
+  onGoBudgets = () => this.setState({ screen: 'budgets' });
+  onNewBudgetNameChange = (e) => this.setState({ newBudgetName: e.target.value });
+  onNewBudgetAllocatedChange = (e) => this.setState({ newBudgetAllocated: e.target.value });
+  onOpenBudgetModal = () => this.setState({ budgetModalOpen: true, budgetFormError: null, newBudgetName: '', newBudgetAllocated: '' });
+  onCloseBudgetModal = () => this.setState({ budgetModalOpen: false });
+  onAddBudget = async () => {
+    const name = this.state.newBudgetName.trim();
+    const allocated = parseFloat(this.state.newBudgetAllocated) || 0;
+    if (!name || allocated <= 0) {
+      this.setState({ budgetFormError: 'Enter an event name and an allocated amount above $0.' });
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/budgets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, allocated }),
+      });
+      if (!res.ok) throw new Error('request failed');
+      const budget = await res.json();
+      this.setState(s => ({ budgets: [...s.budgets, budget], newBudgetName: '', newBudgetAllocated: '', budgetModalOpen: false, budgetFormError: null }));
+    } catch (err) {
+      this.setState({ budgetFormError: "Couldn't save this event — check that the server is running." });
+    }
+  };
+
+  processFile = async (file) => {
+    if (!file) return;
+    if (!(file.type.startsWith('image/') || file.type === 'application/pdf')) {
+      this.setState({ uploadError: 'Please choose a PDF or image file.' });
+      return;
+    }
+    const fileType = file.type.startsWith('image/') ? 'image' : 'pdf';
+    const previewUrl = fileType === 'image' ? URL.createObjectURL(file) : null;
+    const fileName = file.name;
+    this.setState({ uploadStatus: 'processing', processingFileName: fileName, uploadError: null });
+    try {
+      const base64 = await fileToBase64(file);
+      const contentBlock = fileType === 'image'
+        ? { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } }
+        : { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } };
+      const prompt = 'Extract details from this receipt or quote. Respond with ONLY minified JSON, no markdown, matching exactly this shape: {"merchant":string,"amount":number,"date":"YYYY-MM-DD","category":"Food & Drinks"|"Supplies"|"Printing"|"Travel"|"Equipment"|"Other","lineItems":[{"description":string,"cost":number}]}. Pick the category that best fits. If a field is illegible or missing, use "" / 0 / [].';
+      const raw = await window.claude.complete({
+        model: 'claude-haiku-4-5',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: [contentBlock, { type: 'text', text: prompt }] }],
+      });
+      const jsonStr = raw.trim().replace(/^```(json)?/i, '').replace(/```$/, '').trim();
+      const data = JSON.parse(jsonStr);
+      this.setState({
+        uploadStatus: 'idle',
+        screen: 'review',
+        draft: {
+          merchant: data.merchant || '',
+          amount: typeof data.amount === 'number' ? data.amount : (parseFloat(data.amount) || ''),
+          date: data.date || '',
+          category: CATEGORIES.includes(data.category) ? data.category : 'Other',
+          budgetId: '', note: '', fileName, fileType, previewUrl,
+          lineItems: Array.isArray(data.lineItems) ? data.lineItems.filter(li => li && li.description) : [],
+        },
+      });
+    } catch (err) {
+      this.setState({
+        uploadStatus: 'idle',
+        screen: 'review',
+        draft: { merchant: '', amount: '', date: '', category: CATEGORIES[0], budgetId: '', note: '', fileName, fileType, previewUrl, lineItems: [] },
+        toast: "Couldn't auto-read that receipt — please fill in the details.",
+      });
+      setTimeout(() => this.setState({ toast: null }), 3000);
+    }
+  };
+  onFileChange = (e) => this.processFile(e.target.files && e.target.files[0]);
+  onDragOver = (e) => e.preventDefault();
+  onDrop = (e) => { e.preventDefault(); this.processFile(e.dataTransfer.files && e.dataTransfer.files[0]); };
+
+  openCamera = async () => {
+    this.setState({ cameraError: null });
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      this.cameraStream = stream;
+      this.setState({ cameraOpen: true }, () => {
+        if (this.videoRef.current) this.videoRef.current.srcObject = stream;
+      });
+    } catch (err) {
+      this.setState({ cameraError: 'Camera access was denied or is unavailable on this device.' });
+    }
+  };
+  closeCamera = () => {
+    if (this.cameraStream) { this.cameraStream.getTracks().forEach(t => t.stop()); this.cameraStream = null; }
+    this.setState({ cameraOpen: false });
+  };
+  capturePhoto = () => {
+    const video = this.videoRef.current;
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+        this.closeCamera();
+        this.processFile(file);
+      }
+    }, 'image/jpeg', 0.9);
+  };
+  componentWillUnmount() {
+    if (this.cameraStream) this.cameraStream.getTracks().forEach(t => t.stop());
+  }
+
+  updateDraft = (key, value) => this.setState(s => ({ draft: { ...s.draft, [key]: value } }));
+  onMerchantChange = (e) => this.updateDraft('merchant', e.target.value);
+  onAmountChange = (e) => this.updateDraft('amount', e.target.value);
+  onDateChange = (e) => this.updateDraft('date', e.target.value);
+  onCategoryChange = (e) => this.updateDraft('category', e.target.value);
+  onBudgetChange = (e) => this.updateDraft('budgetId', e.target.value);
+  onNoteChange = (e) => this.updateDraft('note', e.target.value);
+
+  onCancelDraft = () => this.setState({ draft: null, screen: 'upload', uploadStatus: 'idle' });
+
+  onSubmitDraft = async () => {
+    const d = this.state.draft;
+    if (!d || !d.budgetId) return;
+    try {
+      const res = await fetch(`${API_BASE}/requests`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberId: 'me', merchant: d.merchant, amount: parseFloat(d.amount) || 0,
+          date: d.date, category: d.category, budgetId: d.budgetId || '', note: d.note,
+          previewUrl: d.previewUrl, fileType: d.fileType,
+        }),
+      });
+      if (!res.ok) throw new Error('request failed');
+      const newRequest = await res.json();
+      this.setState(s => ({ requests: [newRequest, ...s.requests], draft: null, screen: 'history', toast: 'Request submitted to the treasurer' }));
+      setTimeout(() => this.setState({ toast: null }), 2500);
+    } catch (err) {
+      this.setState({ toast: "Couldn't submit — check that the server is running." });
+      setTimeout(() => this.setState({ toast: null }), 2500);
+    }
+  };
+
+  selectRequest = (id) => {
+    const req = this.state.requests.find(r => r.id === id);
+    this.setState({ selectedRequestId: id, reviewComment: (req && req.comment) || '' });
+  };
+  onCommentChange = (e) => this.setState({ reviewComment: e.target.value });
+
+  decideRequest = async (status) => {
+    const id = this.state.selectedRequestId;
+    const comment = this.state.reviewComment;
+    try {
+      const res = await fetch(`${API_BASE}/requests/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, comment }),
+      });
+      if (!res.ok) throw new Error('request failed');
+      const updated = await res.json();
+      this.setState(s => ({
+        requests: s.requests.map(r => r.id === id ? updated : r),
+        selectedRequestId: null, reviewComment: null,
+        toast: status === 'approved' ? 'Request approved' : 'Request rejected',
+      }));
+    } catch (err) {
+      this.setState({ toast: "Couldn't save — check that the server is running." });
+    }
+    setTimeout(() => this.setState({ toast: null }), 2200);
+  };
+  onApprove = () => this.decideRequest('approved');
+  onReject = () => this.decideRequest('rejected');
+
+  componentDidUpdate() {
+    const d = this.state.draft;
+    if (this.draftImgRef.current && d && d.fileType === 'image' && d.previewUrl && this.draftImgRef.current.src !== d.previewUrl) {
+      this.draftImgRef.current.src = d.previewUrl;
+    }
+    const sel = this.state.requests.find(r => r.id === this.state.selectedRequestId);
+    if (this.selectedImgRef.current && sel && sel.fileType === 'image' && sel.previewUrl && this.selectedImgRef.current.src !== sel.previewUrl) {
+      this.selectedImgRef.current.src = sel.previewUrl;
+    }
+  }
+
+  renderVals() {
+    const s = this.state;
+    const isMember = s.role === 'member';
+    const isTreasurer = s.role === 'treasurer';
+    const pillActive = { flex: 1, padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#4B5563', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: 'pointer' };
+    const pillInactive = { flex: 1, padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#6B7280', fontWeight: 700, fontSize: '13px', cursor: 'pointer' };
+    const tabActive = { padding: '14px 4px', border: 'none', borderBottom: '2px solid #4B5563', background: 'transparent', color: '#374151', fontWeight: 700, fontSize: '14px', cursor: 'pointer' };
+    const tabInactive = { padding: '14px 4px', border: 'none', borderBottom: '2px solid transparent', background: 'transparent', color: '#9CA3AF', fontWeight: 700, fontSize: '14px', cursor: 'pointer' };
+
+    const draft = s.draft;
+    const budgetName = (id) => getBudgetName(s.budgets, id);
+    const canSubmitDraft = !!(draft && draft.budgetId);
+    const submitBtnStyle = canSubmitDraft
+      ? { padding: '11px 18px', borderRadius: '8px', border: 'none', background: '#374151', color: '#fff', fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'background 0.15s ease' }
+      : { padding: '11px 18px', borderRadius: '8px', border: 'none', background: '#D1D5DB', color: '#9CA3AF', fontWeight: 700, fontSize: '14px', cursor: 'not-allowed' };
+    const submitBtnHoverStyle = canSubmitDraft ? { background: '#1F2937' } : { background: '#D1D5DB' };
+    const myRequests = s.requests.filter(r => r.memberId === 'me').sort((a, b) => b.id - a.id).map(r => ({
+      ...r, dateLabel: formatDateLabel(r.date), amountLabel: formatCurrency(r.amount),
+      statusLabel: STATUS_META[r.status].label, statusColor: STATUS_META[r.status].color, statusBg: STATUS_META[r.status].bg,
+      hasComment: r.status !== 'pending' && !!r.comment,
+      metaLine: formatDateLabel(r.date) + ' · ' + r.category + (budgetName(r.budgetId) ? ' · ' + budgetName(r.budgetId) : ''),
+    }));
+
+    const pendingList = s.requests.filter(r => r.status === 'pending');
+    const pendingRequests = pendingList.map(r => ({
+      ...r, memberName: getMemberName(r.memberId), initial: getMemberName(r.memberId)[0],
+      dateLabel: formatDateLabel(r.date), amountLabel: formatCurrency(r.amount),
+      rowBg: s.selectedRequestId === r.id ? '#F3F4F6' : '#fff',
+      rowBorder: s.selectedRequestId === r.id ? '#C9CDD3' : '#E4E5E8',
+      metaLine: getMemberName(r.memberId) + ' · ' + formatDateLabel(r.date) + (budgetName(r.budgetId) ? ' · ' + budgetName(r.budgetId) : ''),
+      onSelect: () => this.selectRequest(r.id),
+    }));
+    const selectedRaw = s.requests.find(r => r.id === s.selectedRequestId);
+    const selected = selectedRaw ? {
+      ...selectedRaw, memberName: getMemberName(selectedRaw.memberId), dateLabel: formatDateLabel(selectedRaw.date),
+      amountLabel: formatCurrency(selectedRaw.amount), hasNote: !!selectedRaw.note,
+      previewIsImage: selectedRaw.fileType === 'image' && !!selectedRaw.previewUrl,
+      previewIsPlaceholder: !(selectedRaw.fileType === 'image' && !!selectedRaw.previewUrl),
+      hasBudget: !!budgetName(selectedRaw.budgetId), budgetLabel: budgetName(selectedRaw.budgetId),
+    } : null;
+
+    const budgetSelectOptions = [{ id: '', name: 'No budget' }, ...s.budgets];
+    const budgetSummaries = s.budgets.map(b => {
+      const linked = s.requests.filter(r => r.budgetId === b.id && r.status === 'approved');
+      const spent = linked.reduce((sum, r) => sum + r.amount, 0);
+      const pct = b.allocated > 0 ? (spent / b.allocated) * 100 : 0;
+      const barColor = pct >= 90 ? '#B0362B' : pct >= 70 ? '#B45309' : '#1F7A4D';
+      return {
+        ...b, count: linked.length,
+        spentLabel: formatCurrency(spent), allocatedLabel: formatCurrency(b.allocated),
+        pctLabel: Math.round(pct), barWidth: Math.min(100, Math.round(pct)), barColor,
+      };
+    });
+
+    return {
+      isMember, isTreasurer,
+      memberRoleBtnStyle: isMember ? pillActive : pillInactive,
+      treasurerRoleBtnStyle: isTreasurer ? pillActive : pillInactive,
+      onSelectMemberRole: this.onSelectMemberRole, onSelectTreasurerRole: this.onSelectTreasurerRole,
+      tabUploadStyle: s.screen === 'upload' || s.screen === 'review' ? tabActive : tabInactive,
+      tabHistoryStyle: s.screen === 'history' ? tabActive : tabInactive,
+      tabQueueStyle: s.screen === 'queue' ? tabActive : tabInactive,
+      tabBudgetsStyle: s.screen === 'budgets' ? tabActive : tabInactive,
+      onGoUpload: this.onGoUpload, onGoHistory: this.onGoHistory, onGoQueue: this.onGoQueue,
+      onGoBudgets: this.onGoBudgets,
+
+      isUpload: s.screen === 'upload', isReview: s.screen === 'review' && !!draft,
+      isHistory: s.screen === 'history', isQueue: s.screen === 'queue',
+      isBudgets: s.screen === 'budgets',
+
+      isProcessing: s.uploadStatus === 'processing', isIdleUpload: s.uploadStatus === 'idle',
+      processingFileName: s.processingFileName, onFileChange: this.onFileChange,
+      onDragOver: this.onDragOver, onDrop: this.onDrop,
+      hasUploadError: !!s.uploadError, uploadError: s.uploadError || '',
+      onOpenCamera: this.openCamera, onCloseCamera: this.closeCamera, onCapturePhoto: this.capturePhoto,
+      cameraOpen: s.cameraOpen, hasCameraError: !!s.cameraError, cameraError: s.cameraError || '', videoRef: this.videoRef,
+
+      draftMerchant: draft ? draft.merchant : '', draftAmount: draft ? draft.amount : '',
+      draftDate: draft ? draft.date : '', draftCategory: draft ? draft.category : '',
+      draftNote: draft ? draft.note : '', draftFileName: draft ? draft.fileName : '',
+      draftImgRef: this.draftImgRef,
+      previewIsImage: !!draft && draft.fileType === 'image', previewIsPdf: !!draft && draft.fileType === 'pdf',
+      categoryOptions: CATEGORIES,
+      draftBudgetId: draft ? (draft.budgetId || '') : '', budgetSelectOptions,
+      hasLineItems: !!draft && Array.isArray(draft.lineItems) && draft.lineItems.length > 0,
+      draftLineItems: (draft && draft.lineItems) ? draft.lineItems.map(li => ({ description: li.description, costLabel: formatCurrency(li.cost) })) : [],
+      onMerchantChange: this.onMerchantChange, onAmountChange: this.onAmountChange, onDateChange: this.onDateChange,
+      onCategoryChange: this.onCategoryChange, onBudgetChange: this.onBudgetChange, onNoteChange: this.onNoteChange,
+      onCancelDraft: this.onCancelDraft, onSubmitDraft: this.onSubmitDraft,
+      submitDisabled: !canSubmitDraft, submitBtnStyle, submitBtnHoverStyle,
+      noBudgetsAtAll: s.budgets.length === 0,
+      needsBudgetPick: s.budgets.length > 0 && !canSubmitDraft,
+
+      myRequests, myRequestsEmpty: myRequests.length === 0,
+
+      pendingCount: pendingRequests.length, pendingRequests, pendingEmpty: pendingRequests.length === 0,
+      hasSelectedRequest: !!selected, hasNoSelectedRequest: !selected, selected: selected || {},
+      selectedImgRef: this.selectedImgRef,
+      reviewComment: s.reviewComment || '', onCommentChange: this.onCommentChange,
+      onApprove: this.onApprove, onReject: this.onReject,
+
+      budgetSummaries, budgetsEmpty: budgetSummaries.length === 0, hasActiveEvents: budgetSummaries.length > 0, newBudgetName: s.newBudgetName, newBudgetAllocated: s.newBudgetAllocated,
+      onNewBudgetNameChange: this.onNewBudgetNameChange, onNewBudgetAllocatedChange: this.onNewBudgetAllocatedChange, onAddBudget: this.onAddBudget,
+      budgetModalOpen: s.budgetModalOpen, onOpenBudgetModal: this.onOpenBudgetModal, onCloseBudgetModal: this.onCloseBudgetModal,
+      hasBudgetFormError: !!s.budgetFormError, budgetFormError: s.budgetFormError || '',
+
+      hasToast: !!s.toast, toastMsg: s.toast || '',
+    };
+  }
+}
+
+</script>
+</body>
+</html>
