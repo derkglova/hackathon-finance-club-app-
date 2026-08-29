@@ -143,6 +143,19 @@
                 </sc-for>
               </select>
             </div>
+            <sc-if value="{{ showSubsectionPicker }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Subsection (optional)</label>
+                <select value="{{ draftSubsectionId }}" onChange="{{ onSubsectionChange }}" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px; background:#fff;">
+                  <sc-for list="{{ draftSubsectionOptions }}" as="sub" hint-placeholder-count="3">
+                    <option value="{{ sub.id }}">{{ sub.name }}</option>
+                  </sc-for>
+                </select>
+              </div>
+            </sc-if>
+            <sc-if value="{{ hasDraftOverBudgetWarning }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:12px; font-weight:700; color:#B45309; background:#FFF7ED; border:1px solid #FDE4C0; border-radius:8px; padding:8px 12px;">⚠ {{ draftOverBudgetWarning }}</div>
+            </sc-if>
             <sc-if value="{{ hasLineItems }}" hint-placeholder-val="{{ false }}">
               <div>
                 <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Items detected</label>
@@ -239,7 +252,13 @@
                   <sc-if value="{{ selected.hasBudget }}" hint-placeholder-val="{{ false }}">
                     <div style="font-size:12px; font-weight:700; display:inline-block; padding:4px 10px; border-radius:6px; background:#EEF0F2; color:#6B7280;">{{ selected.budgetLabel }}</div>
                   </sc-if>
+                  <sc-if value="{{ selected.hasSubsection }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:12px; font-weight:700; display:inline-block; padding:4px 10px; border-radius:6px; background:#EEF0F2; color:#6B7280;">{{ selected.subsectionLabel }}</div>
+                  </sc-if>
                 </div>
+                <sc-if value="{{ selected.hasOverBudgetWarning }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:12px; font-weight:700; color:#B45309; background:#FFF7ED; border:1px solid #FDE4C0; border-radius:8px; padding:8px 12px; margin-bottom:14px;">⚠ {{ selected.overBudgetWarningText }}</div>
+                </sc-if>
                 <sc-if value="{{ selected.hasNote }}" hint-placeholder-val="{{ false }}">
                   <div style="font-size:14px; color:#4B5563; margin-bottom:14px;">"{{ selected.note }}"</div>
                 </sc-if>
@@ -277,10 +296,13 @@
         </sc-if>
         <div style="display:flex; flex-direction:column; gap:12px;">
           <sc-for list="{{ budgetSummaries }}" as="b" hint-placeholder-count="3">
-            <div style="background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:16px 18px; box-shadow:0 1px 2px rgba(16,24,32,0.04);">
+            <div onClick="{{ b.onManage }}" onMouseEnter="{{ b.onHoverEnter }}" onMouseLeave="{{ b.onHoverLeave }}" style="background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:16px 18px; box-shadow:0 1px 2px rgba(16,24,32,0.04); cursor:pointer; transition:transform 0.15s ease, box-shadow 0.15s ease;" style-hover="transform:translateY(-1px); box-shadow:0 4px 10px rgba(16,24,32,0.08);">
               <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
                 <div style="font-weight:700; font-size:15px;">{{ b.name }}</div>
-                <div style="font-size:12px; color:#9CA3AF;">{{ b.count }} requests tagged</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div style="font-size:12px; color:#9CA3AF;">{{ b.count }} requests tagged</div>
+                  <button onClick="{{ b.onEdit }}" style="padding:4px 10px; border-radius:6px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Edit</button>
+                </div>
               </div>
               <div style="height:8px; background:#F1F2F4; border-radius:4px; overflow:hidden;">
                 <div style="height:100%; width:{{ b.barWidth }}%; background:{{ b.barColor }}; border-radius:4px;"></div>
@@ -289,6 +311,22 @@
                 <span style="color:#6B7280;">{{ b.spentLabel }} / {{ b.allocatedLabel }} spent</span>
                 <span style="font-weight:700; color:{{ b.barColor }};">{{ b.pctLabel }}%</span>
               </div>
+              <div style="margin-top:8px; font-size:12px; color:#9CA3AF;">{{ b.subsectionsHint }}</div>
+              <sc-if value="{{ b.isHovered }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px; padding-top:12px; border-top:1px solid #F1F2F4; display:flex; flex-direction:column; gap:10px; animation:fadeIn 0.15s ease;">
+                  <sc-for list="{{ b.hoverSubsections }}" as="sub" hint-placeholder-count="3">
+                    <div>
+                      <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                        <span style="font-weight:700; color:#4B5563;">{{ sub.name }}</span>
+                        <span style="color:#9CA3AF;">{{ sub.spentLabel }} / {{ sub.allocatedLabel }} · {{ sub.pctLabel }}%</span>
+                      </div>
+                      <div style="height:5px; background:#F1F2F4; border-radius:3px; overflow:hidden;">
+                        <div style="height:100%; width:{{ sub.barWidth }}%; background:{{ sub.barColor }}; border-radius:3px;"></div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
             </div>
           </sc-for>
         </div>
@@ -300,7 +338,7 @@
   <sc-if value="{{ budgetModalOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;">
       <div style="background:#fff; border-radius:16px; padding:24px; max-width:380px; width:100%; display:flex; flex-direction:column; gap:14px; box-shadow:0 8px 24px rgba(16,24,32,0.15);">
-        <div style="font-size:17px; font-weight:800;">Create event budget</div>
+        <div style="font-size:17px; font-weight:800;">{{ budgetModalTitle }}</div>
         <div>
           <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Event name</label>
           <input value="{{ newBudgetName }}" onChange="{{ onNewBudgetNameChange }}" placeholder="e.g. Fall Social" style="width:100%; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
@@ -317,8 +355,64 @@
         </sc-if>
         <div style="display:flex; gap:10px; margin-top:8px;">
           <button onClick="{{ onCloseBudgetModal }}" style="flex:1; padding:11px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Cancel</button>
-          <button onClick="{{ onAddBudget }}" style="flex:1; padding:11px; border-radius:8px; border:none; background:#374151; color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#1F2937;">Create</button>
+          <button onClick="{{ onAddBudget }}" style="flex:1; padding:11px; border-radius:8px; border:none; background:#374151; color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#1F2937;">{{ budgetSaveLabel }}</button>
         </div>
+        <sc-if value="{{ isEditingBudget }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onDeleteBudget }}" style="padding:11px; border-radius:8px; border:1px solid #E4B4AE; background:#FDEEEC; color:#B0362B; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#FBDFDA;">Delete event budget</button>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ subsectionModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;">
+      <div style="background:#fff; border-radius:16px; padding:24px; max-width:420px; width:100%; display:flex; flex-direction:column; gap:14px; box-shadow:0 8px 24px rgba(16,24,32,0.15); max-height:85vh; overflow-y:auto;">
+        <div>
+          <div style="font-size:17px; font-weight:800;">{{ subsectionModalTitle }}</div>
+          <div style="font-size:12px; color:#9CA3AF; margin-top:2px;">Split this event's budget into named categories, e.g. Food, Clothes, Other.</div>
+        </div>
+
+        <sc-if value="{{ hasSubsectionRows }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <sc-for list="{{ subsectionRows }}" as="sub" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid #E4E5E8; border-radius:8px;">
+                <div>
+                  <div style="font-weight:700; font-size:13px;">{{ sub.name }}</div>
+                  <div style="font-size:12px; color:#9CA3AF; margin-top:2px;">{{ sub.spentLabel }} / {{ sub.allocatedLabel }} · {{ sub.count }} tagged</div>
+                </div>
+                <div style="display:flex; gap:6px; flex-shrink:0;">
+                  <button onClick="{{ sub.onEdit }}" style="padding:4px 9px; border-radius:6px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Edit</button>
+                  <button onClick="{{ sub.onDelete }}" style="padding:4px 9px; border-radius:6px; border:1px solid #E4B4AE; background:#FDEEEC; color:#B0362B; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#FBDFDA;">Delete</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ hasNoSubsectionRows }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1.5px dashed #E4E5E8; border-radius:10px; padding:20px; text-align:center; color:#9CA3AF; font-size:13px;">No subsections yet — add one below.</div>
+        </sc-if>
+
+        <div style="border-top:1px solid #E4E5E8; padding-top:14px; display:flex; flex-direction:column; gap:10px;">
+          <div style="font-size:12px; font-weight:700; color:#6B7280;">{{ subFormLabel }}</div>
+          <div style="display:flex; gap:10px;">
+            <input value="{{ newSubName }}" onChange="{{ onNewSubNameChange }}" placeholder="e.g. Food" style="flex:1.4; padding:9px 11px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px; min-width:0;" />
+            <div style="flex:1; position:relative;">
+              <span style="position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:13px;">$</span>
+              <input type="number" min="0" value="{{ newSubAllocated }}" onChange="{{ onNewSubAllocatedChange }}" placeholder="0.00" style="width:100%; padding:9px 11px 9px 22px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
+            </div>
+          </div>
+          <sc-if value="{{ hasSubFormError }}" hint-placeholder-val="{{ false }}">
+            <div style="color:#B0362B; font-size:13px; font-weight:700;">{{ subFormError }}</div>
+          </sc-if>
+          <div style="display:flex; gap:10px;">
+            <sc-if value="{{ isEditingSub }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ onCancelEditSubsection }}" style="flex:1; padding:10px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:13px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Cancel edit</button>
+            </sc-if>
+            <button onClick="{{ onSaveSubsection }}" style="flex:1; padding:10px; border-radius:8px; border:none; background:#374151; color:#fff; font-weight:700; font-size:13px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#1F2937;">{{ subSaveLabel }}</button>
+          </div>
+        </div>
+
+        <button onClick="{{ onCloseSubsectionsModal }}" style="padding:11px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Done</button>
       </div>
     </div>
   </sc-if>
@@ -364,6 +458,33 @@ const STATUS_META = {
 };
 
 function formatCurrency(n) { return '$' + Number(n || 0).toFixed(2); }
+function barStats(spent, allocated) {
+  const pct = allocated > 0 ? (spent / allocated) * 100 : 0;
+  const barColor = pct >= 90 ? '#B0362B' : pct >= 70 ? '#B45309' : '#1F7A4D';
+  return { pct, pctLabel: Math.round(pct), barWidth: Math.min(100, Math.round(pct)), barColor };
+}
+function overBudgetWarning(budgets, requests, budgetId, subsectionId, amount, excludeRequestId) {
+  const budget = budgets.find(b => b.id === budgetId);
+  if (!budget || !(amount > 0)) return '';
+  const approvedSpent = (matches) => requests.filter(matches).filter(r => r.id !== excludeRequestId).reduce((sum, r) => sum + r.amount, 0);
+
+  if (subsectionId) {
+    const sub = (budget.subsections || []).find(x => x.id === subsectionId);
+    if (sub && sub.allocated > 0) {
+      const projected = approvedSpent(r => r.budgetId === budgetId && r.subsectionId === subsectionId && r.status === 'approved') + amount;
+      if (projected > sub.allocated) {
+        return `This would put ${sub.name} at ${Math.round((projected / sub.allocated) * 100)}% (${formatCurrency(projected)} / ${formatCurrency(sub.allocated)})`;
+      }
+    }
+  }
+  if (budget.allocated > 0) {
+    const projected = approvedSpent(r => r.budgetId === budgetId && r.status === 'approved') + amount;
+    if (projected > budget.allocated) {
+      return `This would put ${budget.name} at ${Math.round((projected / budget.allocated) * 100)}% (${formatCurrency(projected)} / ${formatCurrency(budget.allocated)})`;
+    }
+  }
+  return '';
+}
 function formatDateLabel(iso) {
   if (!iso) return '';
   const d = new Date(iso + 'T00:00:00');
@@ -371,6 +492,11 @@ function formatDateLabel(iso) {
 }
 function getMemberName(id) { const m = MEMBERS.find(x => x.id === id); return m ? m.name : id; }
 function getBudgetName(budgets, id) { const b = budgets.find(x => x.id === id); return b ? b.name : ''; }
+function getSubsectionName(budgets, budgetId, subId) {
+  const b = budgets.find(x => x.id === budgetId);
+  const sub = b && (b.subsections || []).find(x => x.id === subId);
+  return sub ? sub.name : '';
+}
 
 class Component extends DCLogic {
   constructor(props) {
@@ -397,6 +523,13 @@ class Component extends DCLogic {
       newBudgetAllocated: '',
       budgetModalOpen: false,
       budgetFormError: null,
+      editingBudgetId: null,
+      subsectionManageBudgetId: null,
+      newSubName: '',
+      newSubAllocated: '',
+      subFormError: null,
+      editingSubId: null,
+      hoveredBudgetId: null,
       budgets: [],
       requests: [],
     };
@@ -415,8 +548,13 @@ class Component extends DCLogic {
   onGoBudgets = () => this.setState({ screen: 'budgets' });
   onNewBudgetNameChange = (e) => this.setState({ newBudgetName: e.target.value });
   onNewBudgetAllocatedChange = (e) => this.setState({ newBudgetAllocated: e.target.value });
-  onOpenBudgetModal = () => this.setState({ budgetModalOpen: true, budgetFormError: null, newBudgetName: '', newBudgetAllocated: '' });
-  onCloseBudgetModal = () => this.setState({ budgetModalOpen: false });
+  onOpenBudgetModal = () => this.setState({ budgetModalOpen: true, budgetFormError: null, editingBudgetId: null, newBudgetName: '', newBudgetAllocated: '' });
+  onOpenEditBudgetModal = (id) => {
+    const b = this.state.budgets.find(x => x.id === id);
+    if (!b) return;
+    this.setState({ budgetModalOpen: true, budgetFormError: null, editingBudgetId: id, newBudgetName: b.name, newBudgetAllocated: String(b.allocated) });
+  };
+  onCloseBudgetModal = () => this.setState({ budgetModalOpen: false, editingBudgetId: null });
   onAddBudget = async () => {
     const name = this.state.newBudgetName.trim();
     const allocated = parseFloat(this.state.newBudgetAllocated) || 0;
@@ -424,17 +562,98 @@ class Component extends DCLogic {
       this.setState({ budgetFormError: 'Enter an event name and an allocated amount above $0.' });
       return;
     }
+    const editingId = this.state.editingBudgetId;
     try {
-      const res = await fetch(`${API_BASE}/budgets`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE}/budgets${editingId ? '/' + editingId : ''}`, {
+        method: editingId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, allocated }),
       });
       if (!res.ok) throw new Error('request failed');
       const budget = await res.json();
-      this.setState(s => ({ budgets: [...s.budgets, budget], newBudgetName: '', newBudgetAllocated: '', budgetModalOpen: false, budgetFormError: null }));
+      this.setState(s => ({
+        budgets: editingId ? s.budgets.map(b => b.id === editingId ? budget : b) : [...s.budgets, budget],
+        newBudgetName: '', newBudgetAllocated: '', budgetModalOpen: false, budgetFormError: null, editingBudgetId: null,
+      }));
     } catch (err) {
-      this.setState({ budgetFormError: "Couldn't save this event — check that the server is running." });
+      this.setState({ budgetFormError: editingId ? "Couldn't save changes — check that the server is running." : "Couldn't save this event — check that the server is running." });
+    }
+  };
+  onDeleteBudget = async () => {
+    const id = this.state.editingBudgetId;
+    if (!id) return;
+    if (!window.confirm('Delete this event budget? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`${API_BASE}/budgets/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'request failed');
+      }
+      this.setState(s => ({
+        budgets: s.budgets.filter(b => b.id !== id),
+        budgetModalOpen: false, editingBudgetId: null, newBudgetName: '', newBudgetAllocated: '', budgetFormError: null,
+      }));
+    } catch (err) {
+      this.setState({ budgetFormError: err.message || "Couldn't delete this event." });
+    }
+  };
+
+  onOpenSubsectionsModal = (budgetId) => this.setState({ subsectionManageBudgetId: budgetId, newSubName: '', newSubAllocated: '', subFormError: null, editingSubId: null });
+  onCloseSubsectionsModal = () => this.setState({ subsectionManageBudgetId: null, editingSubId: null, newSubName: '', newSubAllocated: '', subFormError: null });
+  onNewSubNameChange = (e) => this.setState({ newSubName: e.target.value });
+  onNewSubAllocatedChange = (e) => this.setState({ newSubAllocated: e.target.value });
+  onEditSubsection = (subId) => {
+    const budget = this.state.budgets.find(b => b.id === this.state.subsectionManageBudgetId);
+    const sub = budget && (budget.subsections || []).find(x => x.id === subId);
+    if (!sub) return;
+    this.setState({ editingSubId: subId, newSubName: sub.name, newSubAllocated: String(sub.allocated), subFormError: null });
+  };
+  onCancelEditSubsection = () => this.setState({ editingSubId: null, newSubName: '', newSubAllocated: '', subFormError: null });
+  onSaveSubsection = async () => {
+    const budgetId = this.state.subsectionManageBudgetId;
+    const name = this.state.newSubName.trim();
+    const allocated = parseFloat(this.state.newSubAllocated) || 0;
+    if (!name || allocated <= 0) {
+      this.setState({ subFormError: 'Enter a name and an amount above $0.' });
+      return;
+    }
+    const editingId = this.state.editingSubId;
+    try {
+      const res = await fetch(`${API_BASE}/budgets/${budgetId}/subsections${editingId ? '/' + editingId : ''}`, {
+        method: editingId ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, allocated }),
+      });
+      if (!res.ok) throw new Error('request failed');
+      const sub = await res.json();
+      this.setState(s => ({
+        budgets: s.budgets.map(b => b.id !== budgetId ? b : {
+          ...b,
+          subsections: editingId
+            ? (b.subsections || []).map(x => x.id === editingId ? sub : x)
+            : [...(b.subsections || []), sub],
+        }),
+        newSubName: '', newSubAllocated: '', editingSubId: null, subFormError: null,
+      }));
+    } catch (err) {
+      this.setState({ subFormError: "Couldn't save — check that the server is running." });
+    }
+  };
+  onDeleteSubsection = async (subId) => {
+    const budgetId = this.state.subsectionManageBudgetId;
+    if (!window.confirm('Delete this subsection? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`${API_BASE}/budgets/${budgetId}/subsections/${subId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'request failed');
+      }
+      this.setState(s => ({
+        budgets: s.budgets.map(b => b.id !== budgetId ? b : { ...b, subsections: (b.subsections || []).filter(x => x.id !== subId) }),
+        editingSubId: null, newSubName: '', newSubAllocated: '', subFormError: null,
+      }));
+    } catch (err) {
+      this.setState({ subFormError: err.message || "Couldn't delete this subsection." });
     }
   };
 
@@ -465,7 +684,7 @@ class Component extends DCLogic {
           amount: typeof data.amount === 'number' ? data.amount : (parseFloat(data.amount) || ''),
           date: data.date || '',
           category: CATEGORIES.includes(data.category) ? data.category : 'Other',
-          budgetId: '', note: '', fileName, fileType, previewUrl,
+          budgetId: '', subsectionId: '', note: '', fileName, fileType, previewUrl,
           lineItems: Array.isArray(data.lineItems) ? data.lineItems.filter(li => li && li.description) : [],
         },
       });
@@ -473,7 +692,7 @@ class Component extends DCLogic {
       this.setState({
         uploadStatus: 'idle',
         screen: 'review',
-        draft: { merchant: '', amount: '', date: '', category: CATEGORIES[0], budgetId: '', note: '', fileName, fileType, previewUrl, lineItems: [] },
+        draft: { merchant: '', amount: '', date: '', category: CATEGORIES[0], budgetId: '', subsectionId: '', note: '', fileName, fileType, previewUrl, lineItems: [] },
         toast: "Couldn't auto-read that receipt — please fill in the details.",
       });
       setTimeout(() => this.setState({ toast: null }), 3000);
@@ -523,7 +742,8 @@ class Component extends DCLogic {
   onAmountChange = (e) => this.updateDraft('amount', e.target.value);
   onDateChange = (e) => this.updateDraft('date', e.target.value);
   onCategoryChange = (e) => this.updateDraft('category', e.target.value);
-  onBudgetChange = (e) => this.updateDraft('budgetId', e.target.value);
+  onBudgetChange = (e) => this.setState(s => ({ draft: { ...s.draft, budgetId: e.target.value, subsectionId: '' } }));
+  onSubsectionChange = (e) => this.updateDraft('subsectionId', e.target.value);
   onNoteChange = (e) => this.updateDraft('note', e.target.value);
 
   onCancelDraft = () => this.setState({ draft: null, screen: 'upload', uploadStatus: 'idle' });
@@ -537,7 +757,7 @@ class Component extends DCLogic {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           memberId: 'me', merchant: d.merchant, amount: parseFloat(d.amount) || 0,
-          date: d.date, category: d.category, budgetId: d.budgetId || '', note: d.note,
+          date: d.date, category: d.category, budgetId: d.budgetId || '', subsectionId: d.subsectionId || '', note: d.note,
           previewUrl: d.previewUrl, fileType: d.fileType,
         }),
       });
@@ -625,26 +845,61 @@ class Component extends DCLogic {
       onSelect: () => this.selectRequest(r.id),
     }));
     const selectedRaw = s.requests.find(r => r.id === s.selectedRequestId);
+    const subsectionName = (budgetId, subId) => getSubsectionName(s.budgets, budgetId, subId);
     const selected = selectedRaw ? {
       ...selectedRaw, memberName: getMemberName(selectedRaw.memberId), dateLabel: formatDateLabel(selectedRaw.date),
       amountLabel: formatCurrency(selectedRaw.amount), hasNote: !!selectedRaw.note,
       previewIsImage: selectedRaw.fileType === 'image' && !!selectedRaw.previewUrl,
       previewIsPlaceholder: !(selectedRaw.fileType === 'image' && !!selectedRaw.previewUrl),
       hasBudget: !!budgetName(selectedRaw.budgetId), budgetLabel: budgetName(selectedRaw.budgetId),
+      hasSubsection: !!subsectionName(selectedRaw.budgetId, selectedRaw.subsectionId),
+      subsectionLabel: subsectionName(selectedRaw.budgetId, selectedRaw.subsectionId),
+      hasOverBudgetWarning: !!overBudgetWarning(s.budgets, s.requests, selectedRaw.budgetId, selectedRaw.subsectionId, selectedRaw.amount, selectedRaw.id),
+      overBudgetWarningText: overBudgetWarning(s.budgets, s.requests, selectedRaw.budgetId, selectedRaw.subsectionId, selectedRaw.amount, selectedRaw.id),
     } : null;
 
     const budgetSelectOptions = [{ id: '', name: 'No budget' }, ...s.budgets];
     const budgetSummaries = s.budgets.map(b => {
       const linked = s.requests.filter(r => r.budgetId === b.id && r.status === 'approved');
       const spent = linked.reduce((sum, r) => sum + r.amount, 0);
-      const pct = b.allocated > 0 ? (spent / b.allocated) * 100 : 0;
-      const barColor = pct >= 90 ? '#B0362B' : pct >= 70 ? '#B45309' : '#1F7A4D';
+      const stats = barStats(spent, b.allocated);
+      const subCount = (b.subsections || []).length;
+      const hoverSubsections = (b.subsections || []).map(sub => {
+        const subLinked = s.requests.filter(r => r.subsectionId === sub.id && r.status === 'approved');
+        const subSpent = subLinked.reduce((sum, r) => sum + r.amount, 0);
+        const subStats = barStats(subSpent, sub.allocated);
+        return { ...sub, spentLabel: formatCurrency(subSpent), allocatedLabel: formatCurrency(sub.allocated), ...subStats };
+      });
       return {
         ...b, count: linked.length,
-        spentLabel: formatCurrency(spent), allocatedLabel: formatCurrency(b.allocated),
-        pctLabel: Math.round(pct), barWidth: Math.min(100, Math.round(pct)), barColor,
+        spentLabel: formatCurrency(spent), allocatedLabel: formatCurrency(b.allocated), ...stats,
+        onEdit: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.onOpenEditBudgetModal(b.id); },
+        onManage: () => this.onOpenSubsectionsModal(b.id),
+        hasSubsections: subCount > 0,
+        subsectionsHint: subCount > 0 ? (subCount + (subCount === 1 ? ' subsection' : ' subsections') + ' · click to manage') : 'Click to add subsections',
+        hoverSubsections,
+        isHovered: s.hoveredBudgetId === b.id && subCount > 0,
+        onHoverEnter: () => this.setState({ hoveredBudgetId: b.id }),
+        onHoverLeave: () => this.setState({ hoveredBudgetId: null }),
       };
     });
+
+    const selectedDraftBudget = draft ? s.budgets.find(b => b.id === draft.budgetId) : null;
+    const draftSubsectionOptions = selectedDraftBudget ? [{ id: '', name: 'No subsection' }, ...(selectedDraftBudget.subsections || [])] : [];
+    const showSubsectionPicker = !!selectedDraftBudget && (selectedDraftBudget.subsections || []).length > 0;
+    const draftOverBudgetWarning = draft ? overBudgetWarning(s.budgets, s.requests, draft.budgetId, draft.subsectionId, parseFloat(draft.amount) || 0, null) : '';
+
+    const subsectionManageBudget = s.budgets.find(b => b.id === s.subsectionManageBudgetId);
+    const subsectionRows = subsectionManageBudget ? (subsectionManageBudget.subsections || []).map(sub => {
+      const linked = s.requests.filter(r => r.subsectionId === sub.id && r.status === 'approved');
+      const spent = linked.reduce((sum, r) => sum + r.amount, 0);
+      return {
+        ...sub, count: linked.length,
+        spentLabel: formatCurrency(spent), allocatedLabel: formatCurrency(sub.allocated),
+        onEdit: () => this.onEditSubsection(sub.id),
+        onDelete: () => this.onDeleteSubsection(sub.id),
+      };
+    }) : [];
 
     return {
       isMember, isTreasurer,
@@ -676,6 +931,9 @@ class Component extends DCLogic {
       previewIsImage: !!draft && draft.fileType === 'image', previewIsPdf: !!draft && draft.fileType === 'pdf',
       categoryOptions: CATEGORIES,
       draftBudgetId: draft ? (draft.budgetId || '') : '', budgetSelectOptions,
+      draftSubsectionId: draft ? (draft.subsectionId || '') : '', draftSubsectionOptions, showSubsectionPicker,
+      onSubsectionChange: this.onSubsectionChange,
+      hasDraftOverBudgetWarning: !!draftOverBudgetWarning, draftOverBudgetWarning,
       hasLineItems: !!draft && Array.isArray(draft.lineItems) && draft.lineItems.length > 0,
       draftLineItems: (draft && draft.lineItems) ? draft.lineItems.map(li => ({ description: li.description, costLabel: formatCurrency(li.cost) })) : [],
       onMerchantChange: this.onMerchantChange, onAmountChange: this.onAmountChange, onDateChange: this.onDateChange,
@@ -697,6 +955,19 @@ class Component extends DCLogic {
       onNewBudgetNameChange: this.onNewBudgetNameChange, onNewBudgetAllocatedChange: this.onNewBudgetAllocatedChange, onAddBudget: this.onAddBudget,
       budgetModalOpen: s.budgetModalOpen, onOpenBudgetModal: this.onOpenBudgetModal, onCloseBudgetModal: this.onCloseBudgetModal,
       hasBudgetFormError: !!s.budgetFormError, budgetFormError: s.budgetFormError || '',
+      isEditingBudget: !!s.editingBudgetId, budgetModalTitle: s.editingBudgetId ? 'Edit event budget' : 'Create event budget',
+      budgetSaveLabel: s.editingBudgetId ? 'Save changes' : 'Create', onDeleteBudget: this.onDeleteBudget,
+
+      subsectionModalOpen: !!s.subsectionManageBudgetId,
+      subsectionModalTitle: subsectionManageBudget ? subsectionManageBudget.name + ' — subsections' : '',
+      subsectionRows, hasSubsectionRows: subsectionRows.length > 0, hasNoSubsectionRows: subsectionRows.length === 0,
+      newSubName: s.newSubName, newSubAllocated: s.newSubAllocated,
+      onNewSubNameChange: this.onNewSubNameChange, onNewSubAllocatedChange: this.onNewSubAllocatedChange,
+      onSaveSubsection: this.onSaveSubsection, onCloseSubsectionsModal: this.onCloseSubsectionsModal,
+      hasSubFormError: !!s.subFormError, subFormError: s.subFormError || '',
+      isEditingSub: !!s.editingSubId, onCancelEditSubsection: this.onCancelEditSubsection,
+      subFormLabel: s.editingSubId ? 'Edit subsection' : 'Add a subsection',
+      subSaveLabel: s.editingSubId ? 'Save changes' : 'Add subsection',
 
       hasToast: !!s.toast, toastMsg: s.toast || '',
     };

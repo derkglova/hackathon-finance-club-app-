@@ -31,9 +31,118 @@ def create_budget():
     if allocated <= 0:
         return jsonify(error="allocated must be greater than 0"), 400
 
-    budget = {"id": storage.next_budget_id(), "name": name, "allocated": allocated}
+    budget = {"id": storage.next_budget_id(), "name": name, "allocated": allocated, "subsections": []}
     storage.budgets.append(budget)
     return jsonify(budget), 201
+
+
+@bp.patch("/budgets/<budget_id>")
+def update_budget(budget_id):
+    budget = next((b for b in storage.budgets if b["id"] == budget_id), None)
+    if not budget:
+        return jsonify(error="budget not found"), 404
+
+    data = request.get_json(silent=True) or {}
+    if "name" in data:
+        name = (data.get("name") or "").strip()
+        if not name:
+            return jsonify(error="name is required"), 400
+        budget["name"] = name
+    if "allocated" in data:
+        try:
+            allocated = float(data.get("allocated"))
+        except (TypeError, ValueError):
+            return jsonify(error="allocated must be a number"), 400
+        if allocated <= 0:
+            return jsonify(error="allocated must be greater than 0"), 400
+        budget["allocated"] = allocated
+
+    return jsonify(budget)
+
+
+@bp.delete("/budgets/<budget_id>")
+def delete_budget(budget_id):
+    budget = next((b for b in storage.budgets if b["id"] == budget_id), None)
+    if not budget:
+        return jsonify(error="budget not found"), 404
+
+    linked = [r for r in storage.requests if r["budgetId"] == budget_id]
+    if linked:
+        return jsonify(error=f"can't delete — {len(linked)} request(s) are tagged to this event"), 400
+
+    storage.budgets.remove(budget)
+    return "", 204
+
+
+# ---- Budget subsections ----
+
+@bp.post("/budgets/<budget_id>/subsections")
+def create_subsection(budget_id):
+    budget = next((b for b in storage.budgets if b["id"] == budget_id), None)
+    if not budget:
+        return jsonify(error="budget not found"), 404
+
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    allocated = data.get("allocated")
+
+    if not name:
+        return jsonify(error="name is required"), 400
+    try:
+        allocated = float(allocated)
+    except (TypeError, ValueError):
+        return jsonify(error="allocated must be a number"), 400
+    if allocated <= 0:
+        return jsonify(error="allocated must be greater than 0"), 400
+
+    subsection = {"id": storage.next_subsection_id(), "name": name, "allocated": allocated}
+    budget.setdefault("subsections", []).append(subsection)
+    return jsonify(subsection), 201
+
+
+@bp.patch("/budgets/<budget_id>/subsections/<sub_id>")
+def update_subsection(budget_id, sub_id):
+    budget = next((b for b in storage.budgets if b["id"] == budget_id), None)
+    if not budget:
+        return jsonify(error="budget not found"), 404
+    sub = next((x for x in budget.get("subsections", []) if x["id"] == sub_id), None)
+    if not sub:
+        return jsonify(error="subsection not found"), 404
+
+    data = request.get_json(silent=True) or {}
+    if "name" in data:
+        name = (data.get("name") or "").strip()
+        if not name:
+            return jsonify(error="name is required"), 400
+        sub["name"] = name
+    if "allocated" in data:
+        try:
+            allocated = float(data.get("allocated"))
+        except (TypeError, ValueError):
+            return jsonify(error="allocated must be a number"), 400
+        if allocated <= 0:
+            return jsonify(error="allocated must be greater than 0"), 400
+        sub["allocated"] = allocated
+
+    return jsonify(sub)
+
+
+@bp.delete("/budgets/<budget_id>/subsections/<sub_id>")
+def delete_subsection(budget_id, sub_id):
+    budget = next((b for b in storage.budgets if b["id"] == budget_id), None)
+    if not budget:
+        return jsonify(error="budget not found"), 404
+    subsections = budget.get("subsections", [])
+    sub = next((x for x in subsections if x["id"] == sub_id), None)
+    if not sub:
+        return jsonify(error="subsection not found"), 404
+
+    linked = [r for r in storage.requests if r.get("subsectionId") == sub_id]
+    if linked:
+        return jsonify(error=f"can't delete — {len(linked)} request(s) are tagged to this subsection"), 400
+
+    subsections.remove(sub)
+    return "", 204
 
 
 # ---- Requests ----
@@ -66,6 +175,7 @@ def create_request():
     date = (data.get("date") or "").strip()
     category = data.get("category") or "Other"
     budget_id = data.get("budgetId") or ""
+    subsection_id = data.get("subsectionId") or ""
 
     if not merchant:
         return jsonify(error="merchant is required"), 400
@@ -77,8 +187,11 @@ def create_request():
         return jsonify(error="budgetId is required"), 400
     if category not in CATEGORIES:
         return jsonify(error=f"category must be one of {sorted(CATEGORIES)}"), 400
-    if not any(b["id"] == budget_id for b in storage.budgets):
+    budget = next((b for b in storage.budgets if b["id"] == budget_id), None)
+    if not budget:
         return jsonify(error="budgetId does not match an existing budget"), 400
+    if subsection_id and not any(sub["id"] == subsection_id for sub in budget.get("subsections", [])):
+        return jsonify(error="subsectionId does not match an existing subsection for this budget"), 400
 
     new_request = {
         "id": storage.next_request_id(),
@@ -88,6 +201,7 @@ def create_request():
         "date": date,
         "category": category,
         "budgetId": budget_id,
+        "subsectionId": subsection_id,
         "note": data.get("note") or "",
         "status": "pending",
         "comment": "",

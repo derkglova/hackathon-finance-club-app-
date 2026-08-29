@@ -5,6 +5,7 @@ requests = []
 
 _budget_id = 0
 _request_id = 0
+_subsection_id = 0
 
 
 def next_budget_id():
@@ -17,3 +18,9 @@ def next_request_id():
     global _request_id
     _request_id += 1
     return _request_id
+
+
+def next_subsection_id():
+    global _subsection_id
+    _subsection_id += 1
+    return f"s{_subsection_id}"
