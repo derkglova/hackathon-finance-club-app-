@@ -1,0 +1,14 @@
+# Python virtual environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Secrets — never commit the real key, see app/.env.example
+.env
+
+# Packaging / local artifacts
+*.whl
+
+# macOS
+.DS_Store

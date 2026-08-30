@@ -133,8 +133,8 @@
               <div style="flex:1;">
                 <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Amount</label>
                 <div style="position:relative;">
-                  <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:15px;">$</span>
-                  <input type="number" step="0.01" min="0" value="{{ draftAmount }}" onChange="{{ onAmountChange }}" style="width:100%; padding:10px 12px 10px 26px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px;" />
+                  <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:15px;">RM</span>
+                  <input type="number" step="0.01" min="0" value="{{ draftAmount }}" onChange="{{ onAmountChange }}" style="width:100%; padding:10px 12px 10px 38px; border:1px solid #E4E5E8; border-radius:8px; font-size:15px;" />
                 </div>
               </div>
               <div style="flex:1;">
@@ -385,6 +385,38 @@
             </div>
           </sc-if>
 
+          <div style="margin-top:24px; border:1px solid #E4E5E8; border-radius:12px; padding:16px 18px 14px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+              <div style="font-size:13px; font-weight:800; color:#374151;">Spend over time</div>
+              <div style="font-size:12px; color:#9CA3AF;">Budget {{ chartCeilingLabel }}</div>
+            </div>
+            <sc-if value="{{ chartHasData }}" hint-placeholder-val="{{ true }}">
+              <svg viewBox="0 0 640 120" width="100%" style="display:block; height:auto;">
+                <polygon points="{{ chartAreaPoints }}" fill="{{ chartLineColor }}" opacity="0.10"></polygon>
+                <line x1="0" y1="{{ chartCeilingY }}" x2="640" y2="{{ chartCeilingY }}" stroke="#B0362B" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.5"></line>
+                <line x1="{{ chartProjX1 }}" y1="{{ chartProjY1 }}" x2="640" y2="{{ chartProjY2 }}" stroke="{{ chartProjStroke }}" stroke-width="2.5" stroke-dasharray="5 5" stroke-linecap="round"></line>
+                <polyline points="{{ chartLinePoints }}" fill="none" stroke="{{ chartLineColor }}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+              </svg>
+              <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:#9CA3AF;">
+                <span>{{ chartStartLabel }}</span>
+                <span>{{ chartEndLabel }}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:12px; font-size:12px;">
+                <span style="display:flex; align-items:center; gap:6px; color:#6B7280;"><span style="width:14px; height:3px; border-radius:2px; background:{{ chartLineColor }};"></span>Actual spend</span>
+                <span style="display:flex; align-items:center; gap:6px; color:#6B7280;"><span style="width:14px; height:0; border-top:2px dashed #B0362B; opacity:0.6;"></span>Budget</span>
+                <sc-if value="{{ chartHasProjection }}" hint-placeholder-val="{{ true }}">
+                  <span style="display:flex; align-items:center; gap:6px; color:#6B7280;"><span style="width:14px; height:0; border-top:2px dashed #C08A2E;"></span>If quotes land · {{ chartProjectedLabel }}</span>
+                </sc-if>
+              </div>
+              <sc-if value="{{ chartOverBudget }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px; font-size:12px; font-weight:700; color:#B0362B; background:#FDEEEC; border-radius:6px; padding:7px 10px;">Projected to go over budget by {{ chartOverLabel }}</div>
+              </sc-if>
+            </sc-if>
+            <sc-if value="{{ chartNoData }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:12px; color:#9CA3AF; padding:14px 0;">No approved spending yet — the chart appears once a dated receipt is approved.</div>
+            </sc-if>
+          </div>
+
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:32px; margin-bottom:12px;">
             <div style="font-size:16px; font-weight:800;">Reimbursement requests</div>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -394,14 +426,28 @@
                 <button onClick="{{ onSetFilterPaid }}" style="{{ filterPaidStyle }}">Paid</button>
                 <button onClick="{{ onSetFilterUnpaid }}" style="{{ filterUnpaidStyle }}">Unpaid</button>
               </div>
+              <button onClick="{{ onToggleGroupByPerson }}" style="{{ groupToggleStyle }}">Group by person</button>
               <button onClick="{{ onDownloadPaidReceipts }}" style="padding:7px 14px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F3F4F6;">Download paid receipts</button>
             </div>
           </div>
           <sc-if value="{{ activeEventRequestsEmpty }}" hint-placeholder-val="{{ false }}">
             <div style="border:1.5px dashed #E4E5E8; border-radius:12px; padding:24px; text-align:center; color:#9CA3AF; font-size:13px; margin-bottom:32px;">{{ activeEventEmptyMessage }}</div>
           </sc-if>
-          <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:32px;">
-            <sc-for list="{{ activeEventRequests }}" as="req" hint-placeholder-count="3">
+          <div style="display:flex; flex-direction:column; gap:20px; margin-bottom:32px;">
+            <sc-for list="{{ activeEventGroups }}" as="g" hint-placeholder-count="2">
+            <div style="display:flex; flex-direction:column; gap:10px;">
+            <sc-if value="{{ g.showHeader }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:0 2px;">
+                <div style="font-size:12px; font-weight:800; color:#6B7280; text-transform:uppercase; letter-spacing:0.04em;">{{ g.name }}</div>
+                <div style="display:flex; align-items:baseline; gap:8px; font-size:12px;">
+                  <span style="color:#9CA3AF;">{{ g.countLabel }}</span>
+                  <sc-if value="{{ g.hasOwed }}" hint-placeholder-val="{{ true }}">
+                    <span style="font-weight:700; color:#92710D;">· {{ g.owedLabel }}</span>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+            <sc-for list="{{ g.requests }}" as="req" hint-placeholder-count="3">
               <div style="background:#fff; border:1px solid #E4E5E8; border-radius:12px; padding:14px 16px; box-shadow:0 1px 2px rgba(16,24,32,0.04);">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
                   <div style="display:flex; align-items:center; gap:12px;">
@@ -434,6 +480,8 @@
                 </div>
               </div>
             </sc-for>
+            </div>
+            </sc-for>
           </div>
 
           <div style="border-top:1px solid #E4E5E8; padding-top:24px;">
@@ -465,8 +513,8 @@
               <div style="display:flex; gap:10px;">
                 <input value="{{ newSubName }}" onChange="{{ onNewSubNameChange }}" placeholder="e.g. Food" style="flex:1.4; padding:9px 11px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px; min-width:0;" />
                 <div style="flex:1; position:relative;">
-                  <span style="position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:13px;">$</span>
-                  <input type="number" min="0" value="{{ newSubAllocated }}" onChange="{{ onNewSubAllocatedChange }}" placeholder="0.00" style="width:100%; padding:9px 11px 9px 22px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
+                  <span style="position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:13px;">RM</span>
+                  <input type="number" min="0" value="{{ newSubAllocated }}" onChange="{{ onNewSubAllocatedChange }}" placeholder="0.00" style="width:100%; padding:9px 11px 9px 33px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
                 </div>
               </div>
               <sc-if value="{{ hasSubFormError }}" hint-placeholder-val="{{ false }}">
@@ -500,8 +548,8 @@
         <div>
           <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Allocated budget</label>
           <div style="position:relative;">
-            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:14px;">$</span>
-            <input type="number" min="0" value="{{ newBudgetAllocated }}" onChange="{{ onNewBudgetAllocatedChange }}" placeholder="0.00" style="width:100%; padding:10px 12px 10px 24px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
+            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:14px;">RM</span>
+            <input type="number" min="0" value="{{ newBudgetAllocated }}" onChange="{{ onNewBudgetAllocatedChange }}" placeholder="0.00" style="width:100%; padding:10px 12px 10px 35px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
           </div>
         </div>
         <sc-if value="{{ hasBudgetFormError }}" hint-placeholder-val="{{ false }}">
@@ -554,8 +602,8 @@
         <div>
           <label style="display:block; font-size:12px; font-weight:700; color:#6B7280; margin-bottom:6px;">Final amount</label>
           <div style="position:relative;">
-            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:14px;">$</span>
-            <input type="number" step="0.01" min="0" value="{{ convertAmount }}" onChange="{{ onConvertAmountChange }}" style="width:100%; padding:10px 12px 10px 24px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
+            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:14px;">RM</span>
+            <input type="number" step="0.01" min="0" value="{{ convertAmount }}" onChange="{{ onConvertAmountChange }}" style="width:100%; padding:10px 12px 10px 35px; border:1px solid #E4E5E8; border-radius:8px; font-size:14px;" />
           </div>
         </div>
         <sc-if value="{{ hasConvertError }}" hint-placeholder-val="{{ false }}">
@@ -617,7 +665,7 @@ const STATUS_META = {
   rejected: { label: 'Rejected', color: '#B0362B', bg: '#FDEEEC' },
 };
 
-function formatCurrency(n) { return '$' + Number(n || 0).toFixed(2); }
+function formatCurrency(n) { return 'RM' + Number(n || 0).toFixed(2); }
 const COMMITTED_HATCH = 'repeating-linear-gradient(135deg, #E7B96B 0px, #E7B96B 4px, #F5DCAE 4px, #F5DCAE 8px)';
 function isQuote(r) { return r.kind === 'quote'; }
 function sumApproved(requests, matches) {
@@ -635,6 +683,60 @@ function barStats(spent, committed, allocated) {
     committedWidth: Math.max(0, Math.min(100 - spentWidth, Math.round(committedPct))),
     hasCommitted: committed > 0,
     barColor, committedBg: COMMITTED_HATCH,
+  };
+}
+// Cumulative approved spend, drawn as an inline SVG. Geometry is in viewBox units and the
+// SVG scales uniformly to the card width. Days are spaced evenly (one step per spending day)
+// rather than by calendar distance, so a handful of receipts still reads clearly.
+const CHART_W = 640, CHART_H = 120, CHART_PAD_T = 10, CHART_PAD_B = 10;
+function buildSpendChart(requests, budgetId, allocated, committed, lineColor) {
+  const dated = requests
+    .filter(r => r.budgetId === budgetId && r.status === 'approved' && !isQuote(r) && r.date)
+    .map(r => ({ t: Date.parse(r.date + 'T00:00:00'), iso: r.date, amount: r.amount }))
+    .filter(p => !isNaN(p.t))
+    .sort((a, b) => a.t - b.t);
+  if (!dated.length) return { hasData: false };
+
+  // Collapse several receipts on the same day into one step.
+  const days = [];
+  dated.forEach(p => {
+    const last = days[days.length - 1];
+    if (last && last.t === p.t) last.amount += p.amount;
+    else days.push({ t: p.t, iso: p.iso, amount: p.amount });
+  });
+
+  let running = 0;
+  const cum = days.map(d => { running += d.amount; return { t: d.t, total: running }; });
+  const spent = running;
+  const projected = spent + committed;
+
+  // Reserve the right-hand slice for the projection line when quotes are outstanding.
+  const plotW = committed > 0 ? CHART_W * 0.72 : CHART_W;
+  const yMax = Math.max(allocated, projected) || 1;
+  const plotH = CHART_H - CHART_PAD_T - CHART_PAD_B;
+  const xOf = (i) => (i / cum.length) * plotW;
+  const yOf = (v) => CHART_H - CHART_PAD_B - (v / yMax) * plotH;
+  const baseY = CHART_H - CHART_PAD_B;
+
+  // Start at zero so a single receipt still draws a visible line.
+  const coords = [[0, yOf(0)]].concat(cum.map((c, i) => [xOf(i + 1), yOf(c.total)]));
+  const pts = coords.map(c => c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
+
+  return {
+    hasData: true,
+    linePoints: pts,
+    areaPoints: pts + ' ' + plotW.toFixed(1) + ',' + baseY + ' 0,' + baseY,
+    lineColor,
+    ceilingY: yOf(allocated).toFixed(1),
+    // Always rendered; stroke goes to "none" when there is nothing to project.
+    projStroke: committed > 0 ? '#C08A2E' : 'none',
+    projX1: plotW.toFixed(1), projY1: yOf(spent).toFixed(1), projY2: yOf(projected).toFixed(1),
+    hasProjection: committed > 0,
+    projectedLabel: formatCurrency(projected),
+    startLabel: formatDateLabel(days[0].iso),
+    endLabel: formatDateLabel(days[days.length - 1].iso),
+    overBudget: projected > allocated,
+    overLabel: formatCurrency(projected - allocated),
   };
 }
 function overBudgetWarning(budgets, requests, budgetId, subsectionId, amount, excludeRequestId) {
@@ -717,6 +819,7 @@ class Component extends DCLogic {
       deleteEventConfirmOpen: false,
       deleteRequestId: null,
       requestFilter: 'all',
+      groupByPerson: false,
       convertRequestId: null,
       convertAmount: '',
       convertError: null,
@@ -774,7 +877,7 @@ class Component extends DCLogic {
     const name = this.state.newBudgetName.trim();
     const allocated = parseFloat(this.state.newBudgetAllocated) || 0;
     if (!name || allocated <= 0) {
-      this.setState({ budgetFormError: 'Enter an event name and an allocated amount above $0.' });
+      this.setState({ budgetFormError: 'Enter an event name and an allocated amount above RM0.' });
       return;
     }
     const editingId = this.state.editingBudgetId;
@@ -845,7 +948,7 @@ class Component extends DCLogic {
     if (!id) return;
     const amount = parseFloat(this.state.convertAmount) || 0;
     if (amount <= 0) {
-      this.setState({ convertError: 'Enter an amount above $0.' });
+      this.setState({ convertError: 'Enter an amount above RM0.' });
       return;
     }
     try {
@@ -868,6 +971,7 @@ class Component extends DCLogic {
   };
 
   onSetRequestFilter = (filter) => this.setState({ requestFilter: filter });
+  onToggleGroupByPerson = () => this.setState(s => ({ groupByPerson: !s.groupByPerson }));
   onDownloadPaidReceipts = () => {
     const targets = this.state.requests.filter(r => r.budgetId === this.state.activeEventId && r.status === 'approved' && !isQuote(r) && r.paid && r.fileType === 'image' && r.previewUrl);
     if (targets.length === 0) {
@@ -902,7 +1006,7 @@ class Component extends DCLogic {
     const name = this.state.newSubName.trim();
     const allocated = parseFloat(this.state.newSubAllocated) || 0;
     if (!name || allocated <= 0) {
-      this.setState({ subFormError: 'Enter a name and an amount above $0.' });
+      this.setState({ subFormError: 'Enter a name and an amount above RM0.' });
       return;
     }
     const editingId = this.state.editingSubId;
@@ -1252,16 +1356,7 @@ class Component extends DCLogic {
       };
     }) : [];
 
-    const deleteRequestTarget = s.requests.find(r => r.id === s.deleteRequestId);
-
-    const filterPillStyle = (active) => active
-      ? 'flex:1; padding:6px 14px; border-radius:6px; border:none; background:#374151; color:#fff; font-weight:700; font-size:12px; cursor:pointer;'
-      : 'flex:1; padding:6px 14px; border-radius:6px; border:none; background:transparent; color:#6B7280; font-weight:700; font-size:12px; cursor:pointer;';
-    const activeEventEmptyMessage = s.requestFilter === 'paid' ? 'No paid requests yet.'
-      : s.requestFilter === 'unpaid' ? 'Nothing owed right now.'
-      : s.requestFilter === 'quotes' ? 'No quotes for this event yet.'
-      : 'No requests tagged to this event yet.';
-
+    // What we still owe each person for this event: approved, a real receipt, not yet paid.
     const owedMap = {};
     if (activeEvent) {
       s.requests.forEach(r => {
@@ -1272,6 +1367,45 @@ class Component extends DCLogic {
       });
     }
     const owedList = Object.keys(owedMap).sort().map(name => ({ name, amountLabel: formatCurrency(owedMap[name]) }));
+
+    const activeEventChart = activeEvent
+      ? buildSpendChart(s.requests, activeEvent.id, activeEvent.allocated, activeEventCommitted, activeEventStats.barColor)
+      : { hasData: false };
+
+    // One group with a hidden header when ungrouped, so the card markup lives in a single place.
+    let activeEventGroups;
+    if (!s.groupByPerson) {
+      activeEventGroups = [{ showHeader: false, name: '', countLabel: '', owedLabel: '', hasOwed: false, requests: activeEventRequests }];
+    } else {
+      const byName = {};
+      activeEventRequests.forEach(r => {
+        (byName[r.memberName] = byName[r.memberName] || []).push(r);
+      });
+      activeEventGroups = Object.keys(byName)
+        .sort((a, b) => (owedMap[b] || 0) - (owedMap[a] || 0) || a.localeCompare(b))
+        .map(name => {
+          const requests = byName[name];
+          const owed = owedMap[name] || 0;
+          return {
+            showHeader: true, name, requests,
+            countLabel: requests.length + (requests.length === 1 ? ' item' : ' items'),
+            hasOwed: owed > 0, owedLabel: formatCurrency(owed) + ' owed',
+          };
+        });
+    }
+
+    const deleteRequestTarget = s.requests.find(r => r.id === s.deleteRequestId);
+
+    const filterPillStyle = (active) => active
+      ? 'flex:1; padding:6px 14px; border-radius:6px; border:none; background:#374151; color:#fff; font-weight:700; font-size:12px; cursor:pointer;'
+      : 'flex:1; padding:6px 14px; border-radius:6px; border:none; background:transparent; color:#6B7280; font-weight:700; font-size:12px; cursor:pointer;';
+    const toggleBtnStyle = (active) => active
+      ? 'padding:7px 14px; border-radius:8px; border:1px solid #374151; background:#374151; color:#fff; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;'
+      : 'padding:7px 14px; border-radius:8px; border:1px solid #E4E5E8; background:#fff; color:#4B5563; font-weight:700; font-size:12px; cursor:pointer; transition:background 0.15s ease;';
+    const activeEventEmptyMessage = s.requestFilter === 'paid' ? 'No paid requests yet.'
+      : s.requestFilter === 'unpaid' ? 'Nothing owed right now.'
+      : s.requestFilter === 'quotes' ? 'No quotes for this event yet.'
+      : 'No requests tagged to this event yet.';
 
     const convertTarget = s.requests.find(r => r.id === s.convertRequestId);
 
@@ -1357,6 +1491,7 @@ class Component extends DCLogic {
       filterQuotesStyle: filterPillStyle(s.requestFilter === 'quotes'),
       onSetFilterAll: () => this.onSetRequestFilter('all'), onSetFilterPaid: () => this.onSetRequestFilter('paid'), onSetFilterUnpaid: () => this.onSetRequestFilter('unpaid'),
       onSetFilterQuotes: () => this.onSetRequestFilter('quotes'),
+      activeEventGroups, groupToggleStyle: toggleBtnStyle(s.groupByPerson), onToggleGroupByPerson: this.onToggleGroupByPerson,
       onDownloadPaidReceipts: this.onDownloadPaidReceipts,
 
       convertModalOpen: !!s.convertRequestId,
@@ -1365,6 +1500,16 @@ class Component extends DCLogic {
       hasConvertError: !!s.convertError, convertError: s.convertError || '',
       onCloseConvert: this.onCloseConvert, onConfirmConvert: this.onConfirmConvert,
       owedList, hasOwedList: owedList.length > 0,
+
+      chartHasData: activeEventChart.hasData, chartNoData: !activeEventChart.hasData,
+      chartLinePoints: activeEventChart.linePoints || '', chartAreaPoints: activeEventChart.areaPoints || '',
+      chartLineColor: activeEventChart.lineColor || '#1F7A4D', chartCeilingY: activeEventChart.ceilingY || 0,
+      chartProjStroke: activeEventChart.projStroke || 'none', chartProjX1: activeEventChart.projX1 || 0,
+      chartProjY1: activeEventChart.projY1 || 0, chartProjY2: activeEventChart.projY2 || 0,
+      chartHasProjection: !!activeEventChart.hasProjection, chartProjectedLabel: activeEventChart.projectedLabel || '',
+      chartStartLabel: activeEventChart.startLabel || '', chartEndLabel: activeEventChart.endLabel || '',
+      chartOverBudget: !!activeEventChart.overBudget, chartOverLabel: activeEventChart.overLabel || '',
+      chartCeilingLabel: activeEvent ? formatCurrency(activeEvent.allocated) : '',
 
       subsectionRows, hasSubsectionRows: subsectionRows.length > 0, hasNoSubsectionRows: subsectionRows.length === 0,
       newSubName: s.newSubName, newSubAllocated: s.newSubAllocated,
